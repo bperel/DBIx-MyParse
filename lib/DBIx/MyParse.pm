@@ -3,7 +3,7 @@ package DBIx::MyParse;
 use strict;
 use warnings;
 
-our $VERSION = '0.10';
+our $VERSION = '0.20';
 
 require XSLoader;
 XSLoader::load('DBIx::MyParse', $VERSION);
@@ -28,7 +28,7 @@ DBIx::MyParse - Perl API for MySQL's SQL Parser
 
 	use DBIx::MyParse;
 	my $parser = DBIx::MyParse->new();
-	my $query = $parser->parse("SELECT 1");
+	my $query = $parser->parse("SELECT field FROM table");
 	print $query->getCommand();
 
 =head1 DESCRIPTION

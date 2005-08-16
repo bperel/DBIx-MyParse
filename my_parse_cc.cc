@@ -36,9 +36,9 @@
 
 #include <assert.h>
 
-static char *server_options[] = { "myparse", "--defaults-file=/etc/my.cnf", "--skip-bdb", "--skip-grant-tables", "--skip-innodb", "--skip-isam", "--skip-ndbcluster", "--skip-networking" };
+static char *server_options[] = { "myparse", "--skip-bdb", "--skip-grant-tables", "--skip-innodb", "--skip-isam", "--skip-ndbcluster", "--skip-networking" };
 static int num_elements = sizeof(server_options) / sizeof(char *);
-static char *server_groups[] = { "libmysqld_server", "libmysqld_client" };
+static char *server_groups[] = { "myparse" };
 
 void * my_parse_item(Item * item);
 
@@ -158,6 +158,8 @@ void * my_parse_item(Item * item) {
 		if (item->type() == Item::FUNC_ITEM) {
 			Item_func * func = (Item_func *) item;
 
+/* This will only work on a patched MySQL source, so we are commenting it out of the distribution
+
 			if (!strcmp(func_name, "date_add_interval")) {
 				Item_date_add_interval * date_add_interval = (Item_date_add_interval *) func;
 				char interval_type[255];
@@ -167,6 +169,8 @@ void * my_parse_item(Item * item) {
 
 				my_parse_set_array( item_args_ref, MYPARSE_ARRAY_APPEND, interval_type, MYPARSE_ARRAY_STRING, NULL);
 			}
+
+*/
 
 			if (func->arg_count) {
 				Item **arg,**arg_end;

@@ -3,6 +3,8 @@ package DBIx::MyParse::Query;
 use strict;
 use warnings;
 
+our $VERSION = '0.20';
+
 #
 # If you change those constants, do not forget to change
 # the corresponding C #defines in my_parse.h
@@ -28,8 +30,6 @@ use constant MYPARSE_ERRSTR		=> 15;
 use constant MYPARSE_DELETE_TABLES	=> 16;
 
 1;
-
-
 
 sub getCommand {
 	return $_[0]->[MYPARSE_COMMAND];
@@ -125,7 +125,7 @@ document before attempting to make sense of DBIx::MyParse::Query objects.
 
 =over
 
-=item my $command = $query->getCommand();
+=item my $string = $query->getCommand();
 
 Returns, as string, the name of SQL command that was parsed. All possible values
 can be found in enum enum_sql_command in sql/sql_lex.h from the MySQL source.
@@ -140,7 +140,7 @@ The commands that are currently supported (that is, a parse tree is created for 
 
 Please note that the returned value is a string, and not an integer. Please read the section COMMANDS below for notes on individual commands
 
-=item my $options_ref = $query->getOptions()
+=item my $string_array_ref = $query->getOptions()
 
 Returns a reference to an array containing, as strings, the various options specified for the query, such as
 HIGH_PRIORITY, LOW_PRIORITY, DELAYED, IGNORE and the like. Some of the options are not returned with the names
@@ -208,5 +208,3 @@ the SELECT query used to provide values for the INSERT.
 If ON DUPLICATE KEY UPDATE is also specified, then getUpdateFields() and getUpdateValues() can be used.
 
 =cut
-
-

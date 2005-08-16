@@ -1,8 +1,9 @@
-
 package DBIx::MyParse::Item;
 
 use strict;
 use warnings;
+
+our $VERSION = '0.20';
 
 #
 # If you change those constants, do not forget to change
@@ -142,6 +143,18 @@ sub getJoinCond {
 	return $_[0]->[MYPARSE_ITEM_JOIN_COND];
 }
 
+sub getJoinType {
+	return $_[0]->[MYPARSE_ITEM_JOIN_TYPE];
+}
+
+sub getUseIndex {
+	return $_[0]->[MYPARSE_ITEM_USE_INDEX];
+}
+
+sub getIgnoreIndex {
+	return $_[0]->[MYPARSE_ITEM_IGNORE_INDEX];
+}
+
 1;
 
 __END__
@@ -174,7 +187,7 @@ in Perl to access things.
 
 =over 4
 
-=item my $item_type = $item->getType();
+=item my $string = $item->getType();
 
 This returns the type of the Item as a string, to facilitate dumping and debugging.
 
@@ -204,7 +217,7 @@ referenced.
 REF_ITEM is a FIELD_ITEM that is used in a HAVING clause. VARBIN_ITEM is
 created when a Hex value is passed to MySQL (e.g. 0x5061756c).
 
-=item my $func_type = $item->getFuncType();
+=item my $string = $item->getFuncType();
 
 if $item->getType() eq "FUNC_ITEM", you can call getFuncType() to determine what type of
 function it is. For MySQL, all operators are also of type FUNC_ITEM.
@@ -235,48 +248,76 @@ in enum Sumfunctype in sql/item_sum.h:
 
 For MySQL, all functions not specifically listed above are UNKNOWN_FUNC and you must call getFuncName().
 
-=item my $func_name = $item->getFuncName();
+=item my $string = $item->getFuncName();
 
 Returns the name of the function called, such as "concat_ws", "md5", etc. If $item is not a function,
 but an operator, the symbol of the operator is returned, such as "+", "||", etc. The name of the function
 will be lowercase regardless of the orginal case in the SQL string.
 
-=item my $arguments_ref = $item->getArguments();
+=item my $item_array_ref = $item->getArguments();
 
 Returns a reference to an array containing all the arguments to the function/operator. Each item from
-the array is also an DBIx::MyParse::Item object, even if it is a simple string or a field name.
+the array is an DBIx::MyParse::Item object, even if it is a simple string or a field name.
 
-=item my $database_name = $item->getDatabaseName();
+=item my $string = $item->getDatabaseName();
 
 if $item is FIELD_ITEM, REF_ITEM or a TABLE_ITEM, getDatabaseName() returns the database the field belongs to,
 if it was explicitly specified. If it was not specified explicitly, such as was given previously with a
 "USE DATABASE" command, getDatabaseName() will return undef. This may change in the future if we
 incorporate some more of MySQL's logic
 
-=item my $table_name = $item->getTableName();
+=item my $string = $item->getTableName();
 
 Returns the name of the table for a FIELD_ITEM or TABLE_ITEM object. For FIELD_ITEM, the table name must be
 explicitly specified with "table_name.field_name" notation. Otherwise returns undef and does not attempt to
 guess the name of the table.
 
-=item my $field_name = $item->getTableName();
+=item my $string = $item->getTableName();
 
 Returns the name of the field for a FIELD_ITEM object.
 
-=item my $value = $item->getValue();
+=item my $string = $item->getValue();
 
 Returns, as string, the value of STRING_ITEM, INT_ITEM, REAL_ITEM and VARBIN_ITEM objects. 
 
-=item my $direction = $item->getOrderDir();
-=item my $direction = $item->getGroupDir();
+=item my $string = $item->getOrderDir();
+=item my $string = $item->getGroupDir();
 
 For an FIELD_ITEM used in GROUP BY or ORDER BY, those two identical functions return either the string
 "ASC" or the string "DESC" depending on the group/ordering direction. Default is "ASC" and will be
 returned even if the query does not specify a direction.
 
-=item my $alias = $item->getAlias();
+=item my $string = $item->getAlias();
 
 Returns the name of the Item if provided with an AS clause, such as SELECT field AS alias.
+
+=item my $item_ref = $item->getJoinCond()
+
+For TABLE_ITEM Items, provides a reference to an DBIx::MyParse::Item object containing the condition under
+which the table in question will be joined to the preceding table ( the ON clause in SQL). The USING clause is
+automatically converted to an ON internally by MySQL.
+
+=item my $string = $item->getJoinType();
+
+Returns, as string, the type of join that will be used. Possible values are:
+
+	"JOIN_TYPE_LEFT"
+	"JOIN_TYPE_RIGHT"
+	"JOIN_TYPE_STRAIGHT"
+
+Join type is RIGHT OUTER is currently not returned properly. This will be fixed in due time.
+
+=item my $string_array_ref = $item->getUseIndex();
+
+Returns a reference to an array containing one string for each index mentioned in the USE INDEX clause for the table in question.
+
+This may change in the future to an array of Item objects, rather than simple strings, however at this time MySQL provides strings.
+
+=item my $string_array_ref = $item->getIgnoreIndex();
+
+Returns a reference to an array containing one string for each index mentioned in an IGNORE INDEX clause for the table in question.
+
+This may change in the future to an array of Item objects, rather than simple strings, however at this time MySQL provides strings.
 
 =cut
 
