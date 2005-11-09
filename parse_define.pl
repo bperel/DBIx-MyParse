@@ -37,7 +37,7 @@ my @headers = (
 			'OPTION_TABLE_LOCK',
 			'OPTION_QUICK',
 			'OPTION_QUOTE_SHOW_CREATE',
-			'OPTION_INTERNAL_SUBTRANSACTIONS'
+#			'OPTION_INTERNAL_SUBTRANSACTIONS'
 		],
 		function_name => 'my_parse_query_options'
 	}, {
@@ -107,7 +107,12 @@ void $header->{function_name} (unsigned long define_value, char * buff) {
 		my $input_file = $path.$header->{file_name};
 		open (INP, "$input_file") or die "Can not open header file $input_file: $!";
 		read( INP, my $input_contents, -s $input_file);
-		@define_list = $input_contents =~ m{#define (.*?)[\t\r\n ]}sgio;
+		my @tmp_define_list = $input_contents =~ m{#define (.*?)[\t\r\n ]}sgio;
+		foreach my $define_item (@tmp_define_list) {
+			next if $define_item =~ m{_LAST$}sio;
+			next if $define_item =~ m{_FIRST$}sio;
+			push @define_list, $define_item;
+		}
 	}
 
 	if ($header->{define_type} eq 'bit') {

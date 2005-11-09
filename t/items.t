@@ -47,7 +47,7 @@ ok($int_item->getValue() == 123, 'int_item3');
 my $real_item = $select_items->[1];
 
 ok(ref($real_item) eq 'DBIx::MyParse::Item', 'real_item1');
-ok($real_item->getType() eq 'REAL_ITEM', 'real_item2');
+ok($real_item->getType() eq 'REAL_ITEM' || $real_item->getType() eq 'DECIMAL_ITEM', 'real_item2');
 ok(abs($real_item->getValue() - 1.25) < 0.001, 'real_item3');
 
 my $null_item = $select_items->[2];

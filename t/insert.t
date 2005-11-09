@@ -133,3 +133,5 @@ ok($select_table->getTableName() eq 'second_table', 'select_insert6');
 
 
 
+
+

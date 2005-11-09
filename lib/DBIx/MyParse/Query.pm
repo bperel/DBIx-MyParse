@@ -3,7 +3,7 @@ package DBIx::MyParse::Query;
 use strict;
 use warnings;
 
-our $VERSION = '0.20';
+our $VERSION = '0.40';
 
 #
 # If you change those constants, do not forget to change
@@ -119,16 +119,16 @@ DBIx::MyParse::Query - Access the parse tree produced by DBIx::MyParse
 This module attempts to provide structured access to the parse tree
 that is produced by MySQL's SQL parser. Since the parser itself is not
 exactly perfectly structured, please make sure you read this entire
-document before attempting to make sense of DBIx::MyParse::Query objects.
+document before attempting to make sense of C<DBIx::MyParse::Query> objects.
 
 =head1 METHODS
 
 =over
 
-=item my $string = $query->getCommand();
+=item C<< my $string = $query->getCommand(); >>
 
 Returns, as string, the name of SQL command that was parsed. All possible values
-can be found in enum enum_sql_command in sql/sql_lex.h from the MySQL source.
+can be found in enum enum_sql_command in F<sql/sql_lex.h> from the MySQL source.
 
 The commands that are currently supported (that is, a parse tree is created for them) are as follows:
 
@@ -138,73 +138,135 @@ The commands that are currently supported (that is, a parse tree is created for 
 	"SQLCOM_UPDATE",	"SQLCOM_UPDATE_MULTI"
 	"SQLCOM_DELETE",	"SQLCOM_DELETE_MULTI"
 
-Please note that the returned value is a string, and not an integer. Please read the section COMMANDS below for notes on individual commands
+Please note that the returned value is a string, and not an integer. Please read the section
+COMMANDS below for notes on individual commands
 
-=item my $string_array_ref = $query->getOptions()
+=item C<< my $string_array_ref = $query->getOptions(); >>
 
 Returns a reference to an array containing, as strings, the various options specified for the query, such as
 HIGH_PRIORITY, LOW_PRIORITY, DELAYED, IGNORE and the like. Some of the options are not returned with the names
 you expect, but rather using their internal MySQL names. [[FIXME]]
 
+=back
+
 =head1 ERROR HANDLING
 
-If there has been a parse error, $query->getCommand() eq "SQLCOM_ERROR". From there on, you can:
-
-Call $query->getError() to obtain the string error code, in English, as defined in include/mysql_error.h. Or,
-call $query->getErrno() to obtain the integer error code, as defined in the same file or,
-call $query->getErrstr() to obtain the entire error message, in the native language of the MySQL installation
-(which is the one the mysql client would print on error).
-
-Since we currently only do parsing and no access checks or check if the referenced tables and fields exist, etc.
-getError() will most likely always return "ER_PARSE_ERROR" as string.
-
-=head1 COMMANDS
+If there has been a parse error, C<< $query->getCommand() eq "SQLCOM_ERROR" >>. From there on, you can:
 
 =over
 
-=item SQLCOM_SELECT
+=item C<< my $string = $query->getError() >>
 
-By calling $query->getSelectItems() you obtain a reference to the array of the items SELECT will return, each being a
-DBIx::MyParse::Item object.
+Returns the error code as string, in English, as defined in F<include/mysql_error.h>.
 
-$query->getTables() returns a reference to the array of tables specified in the query. Each table is also an Item object of type
-TABLE_ITEM which carries in it information on the Join type, join conditions, indexes, etc. See DBIx::MyParse::Item
-for information on how to extract the individual properties.
+=item C<< my $integer = $query->getErrno() >>
 
-$query->getWhere() returns an Item object that is the root of the tree containing the WHERE conditions.
-$query->getHaving() operates the same way but for the HAVING clause.
+Returns the error code as integer
 
-$query->getGroup() returns a reference to an array containing an Item object for each GROUP BY condition.
-$query->getOrder() returns a reference to an array containing the individual Items from the ORDER BY clause.
-$query->getLimit() returns a reference to a two-item array containing the two integers from the LIMIT clause.
+=item C<< my $string = $query->getErrstr() >>
 
-=item SQLCOM_UPDATE and SQLCOM_UPDATE_MULTI
+Returns the entire error message, in the language of the MySQL installation. This is the same text the C<mysql>
+client will print for an identical error.
 
-getUpdateFields() returns a reference to an array containing the fields that the query would update.
-getUpdateValues() retunrs a reference to an array containing the values that will be assigned to those fields.
+=back
 
-getTables(), getWhere(), getOrderBy() and getLimit() and getOptions() can also be used.
+Since we currently only do parsing and no access checks or check if the referenced tables and fields exist, etc.
+C<getError()> will most likely always return C<"ER_PARSE_ERROR">.
 
-getTables() will return a reference to a one-item array for SQLCOM_UPDATE. Multiple-item array will be returned
+=head1 COMMANDS
+
+=head2 C<"SQLCOM_SELECT">
+
+=over
+
+=item C<< my $array_ref = $query->getSelectItems() >>
+
+Returns a reference to the array of the items the C<SELECT> query will return, each being a L<Item|DBIx::MyParse::Item> object.
+
+=item C<< my $array_ref = $query->getTables() >>
+
+Rreturns a reference to the array of tables specified in the query. Each table is also an L<Item|DBIx::MyParse::Item>
+object for which C<< $item->getType() eq "TABLE_ITEM" >> which contains information on the Join type, join conditions,
+indexes, etc. See L<DBIx::MyParse::Item|DBIx::MyParse::Item> for information on how to extract the individual properties.
+
+=item C<< my $item = $query->getWhere() >>
+
+Returns an L<Item|DBIx::MyParse::Item> object that is the root of the tree containing the WHERE conditions.
+
+=item C<< my $item = $query->getHaving() >>
+
+Operates the same way as C<getWhere()> but for the HAVING clause.
+
+=item C<< my $array_ref = $query->getGroup() >>
+
+Returns a reference to an array containing one L<Item|DBIx::MyParse::Item> object for each GROUP BY condition.
+
+=item C<< my $array_ref = $query->getOrder() >>
+
+Returns a reference to an array containing the individual Items from the ORDER BY clause.
+
+=item C<< my $array_ref = $query->getLimit() >>
+
+Returns a reference to a two-item array containing the two parts of the LIMIT clause as DBIx::MyParse::Item objects.
+
+=back
+
+=head2 C<"SQLCOM_UPDATE"> and C<"SQLCOM_UPDATE_MULTI">
+
+=over
+
+=item C<< my $array_ref = $query->getUpdateFields() >>
+
+Returns a reference to an array containing the fields that the query would update.
+
+=item C<< my $array_ref = $query->getUpdateValues() >>
+
+Returns a reference to an array containing the values that will be assigned to the fields being updated.
+
+=back
+
+C<getTables()>, C<getWhere()>, C<getOrder()> and C<getLimit()> can also be used for update queries.
+
+C<getTables()> will return a reference to a one-item array for SQLCOM_UPDATE. Multiple-item array will be returned
 for SQLCOM_UPDATE_MULTI, since multiple tables will be involved.
 
-=item SQLCOM_DELETE and SQLCOM_DELETE_MULTI
+=head2 C<"SQLCOM_DELETE"> and C<"SQLCOM_DELETE_MULTI">
 
-For a single-table delete, getCommand() eq "SQLCOM_DELETE" and getDeleteTables() will return a reference to an
-one-item array containing the table we are deleting from. getWhere(), getOrder() and getLimit() can also be used.
+For a single-table delete, C<< $query->getCommand() eq "SQLCOM_DELETE" >>
 
-For a multiple-table delete, getDeleteTables() will return the tables things will be delete from, whereas getTables()
-will return the tables listed in the FROM clause, which are used to provide referential integrity. getWhere() can also be used.
+=over
 
-=item SQLCOM_INSERT, SQLCOM_INSERT_SELECT, SQLCOM_REPLACE and SQLCOM_REPLACE_SELECT
+=item C<< my $array_ref = $query->getDeleteTables() >>
 
-getInsertFields() will return a list of the fields you are inserting to. For SQLCOM_INSERT and SQLCOM_REPLACE,
-getInsertValues() will return a reference to an array, containing one sub-array for each row being inserted or
-replaced (even if there is only one row).
+Will return a reference to an array containing the table(s) we are deleting records from.
 
-For SQLCOM_INSERT_SELECT and SQLCOM_REPLACE_SELECT, getSelectItems(), getTables(), getWhere() and the other SELECT-related properties will describe
-the SELECT query used to provide values for the INSERT.
+=item C<< my $array_ref = $query->getTables() >>
 
-If ON DUPLICATE KEY UPDATE is also specified, then getUpdateFields() and getUpdateValues() can be used.
+For a multiple-table delete, C<getTables()> will return the tables listed in the FROM clause,
+which are used to provide referential integrity.
+
+=back
+
+C<getWhere()>, C<getOrder()> and C<getLimit()> can also be used.
+
+=head2 C<"SQLCOM_INSERT">, C<"SQLCOM_INSERT_SELECT">, C<"SQLCOM_REPLACE"> and C<"SQLCOM_REPLACE_SELECT">
+
+=over
+
+=item C<< my $array_ref = $query->getInsertFields() >>
+
+Returns a list of the fields you are inserting to.
+
+=item C<< my $array_ref = $query->getInsertValues() >> 
+
+For C<"SQLCOM_INSERT"> and C<"SQLCOM_REPLACE">, C<getInsertValues()> will return a reference to an array,
+containing one sub-array for each row being inserted or replaced (even if there is only one row).
+
+=back
+
+For C<"SQLCOM_INSERT_SELECT"> and C<"SQLCOM_REPLACE_SELECT">, C<getSelectItems()>, C<getTables()>,
+C<getWhere()> and the other SELECT-related properties will describe the C<SELECT> query used to provide values for the C<INSERT>.
+
+If C<ON DUPLICATE KEY UPDATE> is also specified, then C<getUpdateFields()> and C<getUpdateValues()> can also be used.
 
 =cut

@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 32;
+use Test::More tests => 35;
 BEGIN {
 	use_ok('DBIx::MyParse');
 	use_ok('DBIx::MyParse::Query');
@@ -32,7 +32,7 @@ my $select_query = DBIx::MyParse->parse("
 	GROUP BY group_by
 	HAVING having_condition
 	ORDER BY order_spec
-	LIMIT 1234
+	LIMIT 1234,2345
 ");
 
 ok(ref($select_query) eq 'DBIx::MyParse::Query', 'new_select');
@@ -47,6 +47,7 @@ my $select_item = $select_items->[0];
 ok(ref($select_item) eq 'DBIx::MyParse::Item', 'select_item1');
 ok($select_item->getType() eq 'FIELD_ITEM', 'select_item2');
 ok($select_item->getFieldName() eq 'field_name', 'select_item3');
+
 
 my $tables = $select_query->getTables();
 ok(ref($tables) eq 'ARRAY', 'select_tables1');
@@ -85,4 +86,14 @@ ok($order->getFieldName() eq 'order_spec', 'select_order3');
 
 my $limit = $select_query->getLimit();
 ok(ref($limit) eq 'ARRAY', 'select_limit1');
-ok($limit->[0] == 1234, 'select_limit2');
+
+my $limit1 = $limit->[0];
+my $limit2 = $limit->[1];
+
+use Data::Dumper;
+print Dumper $limit;
+
+ok(ref($limit1) eq 'DBIx::MyParse::Item', 'select_limit2');
+ok(ref($limit2) eq 'DBIx::MyParse::Item', 'select_limit3');
+ok($limit2->getValue() == 1234, 'select_limit4');
+ok($limit1->getValue() == 2345, 'select_limit4');

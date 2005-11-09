@@ -59,6 +59,8 @@ void * my_parse_get_subarray (void * master_array_ref, int index);
 #define MYPARSE_ARRAY_LONG	2
 #define MYPARSE_ARRAY_INT	3
 
+void my_parse_die();
+
 void * my_parse_create_array ();
 
 void * my_parse_set_array ( void * array_ref, int index, void * item_ref, int item_type, char * class_name );

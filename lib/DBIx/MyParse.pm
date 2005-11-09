@@ -3,7 +3,7 @@ package DBIx::MyParse;
 use strict;
 use warnings;
 
-our $VERSION = '0.20';
+our $VERSION = '0.40';
 
 require XSLoader;
 XSLoader::load('DBIx::MyParse', $VERSION);
@@ -36,8 +36,8 @@ DBIx::MyParse - Perl API for MySQL's SQL Parser
 This module provides access to MySQL's SQL parser, which is a full-featured
 lexx/yacc-based SQL parser, complete with subqueries and various MySQL extensions.
 
-Please check the documentation for DBIx::MyParse::Query to see how you can access
-the parse tree produced by parse().
+Please check the documentation for L<DBIx::MyParse::Query|DBIx::MyParse::Query> to see how you can access
+the parse tree produced by parse(). The parse tree itself consists of L<DBIx::MyParse::Item|DBIx::MyParse::Item> objects.
 
 =head1 FEATURES
 
@@ -49,6 +49,7 @@ The following esoteric SQL constructs are supported:
 	* Multiple-table DELETE
 	* JOINS of any complexity
 	* INSERT INTO table SET column = value
+	* ?-style placeholders
 
 The following SQL constructs are not currently supported:
 
@@ -64,15 +65,13 @@ The following MySQL oddities are not supported yet:
 	* DATE_ADD/DATE_SUB and the like
 	* expr LIKE pat ESCAPE 'escape-char'
 
-=head1 PROS AND CONS
+=head1 ADVANTAGES AND DISADVANTAGES
 
-=head2 Pros
+=head2 ADVANTAGES
 
 This is a full-featured SQL parser, not a set of regular expressions that parsing just
-the most common queries, which is mostly the case with the other CPAN modules available as of August 2005.
-The author believes that even at this early stage in the lifetime of this module, it is far more capable
-than all other SQL parsers available on CPAN combined, which is by virtue of the fact that it
-uses the MySQL parsing engine to do the dirty work.
+the most common queries. It makes use of a complete parsing grammar taken from a real-life
+database, by virtue of the fact that it uses the MySQL parsing engine to do the dirty work.
 
 This module will accept any input that is a valid MySQL command and will reject any input
 that is not a valid MySQL command. Accepting an imput is one thing, producing a complete and
@@ -84,14 +83,20 @@ particular, weird functions, complex nested expressions and operator precedence 
 correctly by definition.
 
 Errors are returned as both error numbers, error codes in English and language-specific long
-MySQL error messages, rather than as die() or carp().
+MySQL error messages, rather than as C<die()> or C<carp()>.
 
-=head2 Cons
+The module's objects are completely hash-free, which should be considerably faster than a comparable
+hash-based implementation.
+
+=head2 DISADVANTAGES
 
 This module is hooked directly to MySQL's internals. Non-MySQL SQL features are not supported
 and can not be supported without changing the MySQL source code. Extending MySQL to support new
 functionality is far more complicated and rewarding than simply adding a few regexps to your
 home-grown SQL parser.
+
+Some of MySQL's code is not friendly towards being (ab)used in the manner employed by this module. There
+are object methods declared Private for no obvious reasons.
 
 MySQL is GPL, so this module is GPL, please see the COPYRIGHT section below for more information.
 
@@ -99,13 +104,13 @@ MySQL is GPL, so this module is GPL, please see the COPYRIGHT section below for 
 
 Please see the following sources for further information:
 
-MySQL Internals Manual: http://dev.mysql.com/doc/internals/en/index.html
+MySQL Internals Manual: L<http://dev.mysql.com/doc/internals/en/index.html>
 
-Doxygen documentation for MySQL 4.1 source: http://www.distlab.dk/mysql-4.1/html/
+Doxygen documentation for MySQL 4.1 source: L<http://www.distlab.dk/mysql-4.1/html/>
 
-Doxygen documentation for MySQL 5 source: http:://leithal.cool-tools.co.uk/sourcedoc/mysql509/html/index.html
+Doxygen documentation for MySQL 5 source: L<http:://leithal.cool-tools.co.uk/sourcedoc/mysql509/html/index.html>
 
-DBIx::MyParse has a page at SourceForge: http://sourceforge.net/projects/myparse/
+C<DBIx::MyParse> has a page at SourceForge: L<http://sourceforge.net/projects/myparse/>
 
 =head1 AUTHOR
 

@@ -17,15 +17,14 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define EMBEDDED_LIBRARY
-#define NO_EMBEDDED_ACCESS_CHECKS
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
-#include <include/mysql.h>
+#define EMBEDDED_LIBRARY
+#define MYSQL_SERVER
+
 #include <sql/mysql_priv.h>
 #include <libmysqld/embedded_priv.h>
 
@@ -70,7 +69,16 @@ void * my_parse_list_strings(List<String> list) {
 void * my_parse_table( st_table_list * table) {
 	void * table_array = my_parse_create_array();
 	my_parse_set_array( table_array, MYPARSE_ITEM_ITEM_TYPE, (void *) "TABLE_ITEM", MYPARSE_ARRAY_STRING, NULL) ;
+
+#if MYSQL_VERSION_ID > 50000
+
+	my_parse_set_array( table_array, MYPARSE_ITEM_TABLE_NAME, (void *) table->table_name, MYPARSE_ARRAY_STRING, NULL );
+
+#else 
+
 	my_parse_set_array( table_array, MYPARSE_ITEM_TABLE_NAME, (void *) table->real_name, MYPARSE_ARRAY_STRING, NULL );
+
+#endif
 	my_parse_set_array( table_array, MYPARSE_ITEM_DB_NAME, (void *) table->db, MYPARSE_ARRAY_STRING, NULL) ;
 	my_parse_set_array( table_array, MYPARSE_ITEM_ALIAS, (void *) table->alias, MYPARSE_ARRAY_STRING, NULL) ;
 
@@ -82,6 +90,7 @@ void * my_parse_table( st_table_list * table) {
 void * my_parse_item(Item * item) {
 
 	char item_type[255];
+
 	int item_type_int = (int) item->type();
 
 	my_parse_Type(item_type_int, item_type);
@@ -104,8 +113,26 @@ void * my_parse_item(Item * item) {
 		snprintf (item_value_str, 255, "%lld", item->val_int());
 		item_value_ref = (void *) item_value_str;
 	} else if (item->type() == Item::REAL_ITEM) {
+
+#if MYSQL_VERSION_ID > 50000
+
+		snprintf( item_value_str, 255, "%f", item->val_real());
+
+#else
+
 		snprintf( item_value_str, 255, "%f", item->val());
+#endif
+
 		item_value_ref = (void *) item_value_str;
+
+#if MYSQL_VERSION_ID > 50000
+
+	} else if (item->type() == Item::DECIMAL_ITEM) {
+		snprintf( item_value_str, 255, "%f", item->val_real());
+		item_value_ref = (void *) item_value_str;
+
+#endif
+
 	} else if (
 		(item->type() == Item::FIELD_ITEM) ||
 		(item->type() == Item::REF_ITEM)
@@ -156,6 +183,7 @@ void * my_parse_item(Item * item) {
 		}
 	
 		if (item->type() == Item::FUNC_ITEM) {
+
 			Item_func * func = (Item_func *) item;
 
 /* This will only work on a patched MySQL source, so we are commenting it out of the distribution
@@ -170,7 +198,15 @@ void * my_parse_item(Item * item) {
 				my_parse_set_array( item_args_ref, MYPARSE_ARRAY_APPEND, interval_type, MYPARSE_ARRAY_STRING, NULL);
 			}
 
+			if (!strcmp(func_name, "set_user_var")) {
+				if (!item_args_ref) item_args_ref = my_parse_create_array();
+				Item_func_set_user_var * set_user_var = (Item_func_set_user_var *) func;
+				LEX_STRING var_name = set_user_var->name;
+				my_parse_set_array( item_args_ref, MYPARSE_ARRAY_APPEND, var_name.str, MYPARSE_ARRAY_STRING, NULL );
+			}
+
 */
+
 
 			if (func->arg_count) {
 				Item **arg,**arg_end;
@@ -215,12 +251,14 @@ void * my_parse_item(Item * item) {
 
 void * my_parse_init() {
 
-	mysql_server_init(num_elements, server_options, server_groups);
+	if (mysql_server_init(num_elements, server_options, server_groups)) {
+		/* MySQL will print out the error message to STDERR, therefore
+			we can simply die without futher explanations */
+		my_parse_die();
+	}
 
 	char *db_name = NULL;
-
 	THD * thd = (THD *) create_embedded_thd(0, db_name);
-
 	return thd;
 
 }
@@ -234,6 +272,14 @@ int my_parse_inner(void * perl_array, char * query) {
 	mysql_init_query(thd, (uchar *) thd->query, thd->query_length);
 	
 	LEX * lex = thd->lex;
+
+
+#if MYSQL_VERSION_ID > 50000
+	lex->stmt_prepare_mode = TRUE;
+	thd->command = COM_STMT_PREPARE;
+#else 
+	thd->command = COM_PREPARE;
+#endif
 
 	int error = yyparse((void *)thd) || thd->is_fatal_error || thd->net.report_error;
 
@@ -298,7 +344,6 @@ int my_parse_inner(void * perl_array, char * query) {
 		(lex->sql_command == SQLCOM_UPDATE)
 	) {
 
-		void * fields_array = my_parse_list_items(lex->field_list);
 
 		if (
 			(lex->sql_command == SQLCOM_INSERT) ||
@@ -306,8 +351,10 @@ int my_parse_inner(void * perl_array, char * query) {
 			(lex->sql_command == SQLCOM_INSERT_SELECT) ||
 			(lex->sql_command == SQLCOM_REPLACE_SELECT)
 		) {
+			void * fields_array = my_parse_list_items(lex->field_list);
 			my_parse_set_array( perl_array, MYPARSE_INSERT_FIELDS, fields_array, MYPARSE_ARRAY_REF, NULL );
 		} else if (lex->sql_command == SQLCOM_UPDATE) {
+			void * fields_array = my_parse_list_items(lex->current_select->item_list);
 			my_parse_set_array( perl_array, MYPARSE_UPDATE_FIELDS, fields_array, MYPARSE_ARRAY_REF, NULL );
 		} else {
 			assert(sql_command);
@@ -361,7 +408,15 @@ int my_parse_inner(void * perl_array, char * query) {
 
 		void * tables_array = my_parse_create_array();
 
+#if MYSQL_VERSION_ID > 50000
+
+		for (tables = start_table ; tables ; tables = tables->next_global) {
+
+#else
+
 		for (tables = start_table ; tables ; tables = tables->next) {
+
+#endif
 
 			/* TODO: The parser creates a Table_ident object to describe the name and the db of the table.
 			   TODO: so we should use it as well, rather than real_name and db from TABLE_LIST */
@@ -414,7 +469,16 @@ int my_parse_inner(void * perl_array, char * query) {
 		TABLE_LIST * start_delete_table = (TABLE_LIST *) lex->auxilliary_table_list.first;
 		TABLE_LIST * delete_tables = NULL;
 		void * delete_tables_array = my_parse_create_array();
+
+#if MYSQL_VERSION_ID > 50000
+
+		for (delete_tables = start_delete_table; delete_tables; delete_tables = delete_tables->next_global) {
+
+#else
+
 		for (delete_tables = start_delete_table; delete_tables; delete_tables = delete_tables->next) {
+
+#endif
 			void * delete_table_array = my_parse_table(delete_tables);
 			my_parse_set_array( delete_tables_array, MYPARSE_ARRAY_APPEND, delete_table_array, MYPARSE_ARRAY_REF, "DBIx::MyParse::Item");
 		}
@@ -491,8 +555,39 @@ int my_parse_inner(void * perl_array, char * query) {
 	if (lex->select_lex.explicit_limit) {
 		void * limit_array = my_parse_create_array();
 
-		my_parse_set_array( limit_array, MYPARSE_LIMIT_SELECT, &lex->select_lex.select_limit, MYPARSE_ARRAY_LONG, NULL);
-		my_parse_set_array( limit_array, MYPARSE_LIMIT_OFFSET, &lex->select_lex.offset_limit, MYPARSE_ARRAY_LONG, NULL);
+		if (lex->select_lex.select_limit) {
+
+#if MYSQL_VERSION_ID > 50000
+
+			my_parse_set_array( limit_array, MYPARSE_LIMIT_SELECT, my_parse_item(lex->select_lex.select_limit), MYPARSE_ARRAY_REF, "DBIx::MyParse::Item");
+
+#else
+
+			void * select_limit_array = my_parse_create_array();
+			my_parse_set_array( select_limit_array, MYPARSE_ITEM_ITEM_TYPE, (void *) "INT_ITEM", MYPARSE_ARRAY_STRING, NULL );
+			my_parse_set_array( select_limit_array, MYPARSE_ITEM_VALUE, &lex->select_lex.select_limit, MYPARSE_ARRAY_LONG, NULL);
+	
+			my_parse_set_array( limit_array, MYPARSE_LIMIT_SELECT, select_limit_array, MYPARSE_ARRAY_REF, "DBIx::MyParse::Item");
+
+#endif
+		}
+
+		if (lex->select_lex.offset_limit) {
+
+#if MYSQL_VERSION_ID > 50000
+
+			my_parse_set_array( limit_array, MYPARSE_LIMIT_OFFSET, my_parse_item(lex->select_lex.offset_limit), MYPARSE_ARRAY_REF, "DBIx::MyParse::Item");
+
+# else 
+
+			void * offset_limit_array = my_parse_create_array();
+			my_parse_set_array( offset_limit_array, MYPARSE_ITEM_ITEM_TYPE, (void *) "INT_ITEM", MYPARSE_ARRAY_STRING, NULL );
+			my_parse_set_array( offset_limit_array, MYPARSE_ITEM_VALUE, &lex->select_lex.offset_limit, MYPARSE_ARRAY_LONG, NULL);
+	
+			my_parse_set_array( limit_array, MYPARSE_LIMIT_OFFSET, offset_limit_array, MYPARSE_ARRAY_REF, "DBIx::MyParse::Item");
+
+#endif
+		}
 
 		my_parse_set_array( perl_array, MYPARSE_LIMIT, limit_array, MYPARSE_ARRAY_REF, NULL );
 	}

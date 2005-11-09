@@ -36,7 +36,7 @@ my $soundex = DBIx::MyParse->parse("
 ");
 
 my $trim = DBIx::MyParse->parse("
-	SELECT TRIM(BOTH 'x' FROM 'xxxbarxxx')
+	SELECT TRIM(LEADING 'x' FROM 'xxxbarxxx')
 ");
 
 my $like = DBIx::MyParse->parse("
@@ -102,6 +102,5 @@ my $coercibility = DBIx::MyParse->parse("
 # 
 #
 
-
-
+my $round = DBIx::MyParse->parse(" SELECT ROUND(1,2) ");
 

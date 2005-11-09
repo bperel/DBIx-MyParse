@@ -10,14 +10,18 @@ my_parse_c.c
 my_parse_cc.cc
 my_parse.h
 
-t/MyParse.t
-t/aggregate.t
 t/delete.t
 t/error.t
 t/functions.t
 t/insert.t
 t/items.t
+t/MyParse.t
+t/params.t
 t/select.t
+t/subquery.t
+t/twins.t
+t/update.t
+t/vars.t
 
 parse_define.pl
 parse_enum.pl

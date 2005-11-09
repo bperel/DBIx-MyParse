@@ -29,6 +29,10 @@
 
 static void * thd;
 
+void my_parse_die() {
+	Perl_die("MySQL fatal error");
+}
+
 void * my_parse_get_thd() {
 	if (thd == NULL) {
 		thd = my_parse_init();
@@ -59,10 +63,11 @@ void * my_parse_set_array (
 	assert(item_ref);
 
 	SV * item = NULL;
+	unsigned long * item_long;
 
 	switch(item_type) {
 		case MYPARSE_ARRAY_LONG:
-			unsigned long * item_long = (unsigned long *) item_ref;
+			item_long = (unsigned long *) item_ref;
 			item = newSViv((IV) *item_long);
 			break;
 		case MYPARSE_ARRAY_STRING:

@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 25;
+use Test::More tests => 26;
 BEGIN {
 	use_ok('DBIx::MyParse');
 	use_ok('DBIx::MyParse::Query');
@@ -43,9 +43,9 @@ my $options = $single_delete->getOptions();
 
 ok(ref($options) eq 'ARRAY', 'single_delete3');
 
-ok((grep {  /OPTION_QUICK/ } @{$options}), 'single_delete4');
-ok((grep {  /IGNORE/ } @{$options}), 'single_delete5');
-ok((grep {  /TL_WRITE_DELAYED/ } @{$options}), 'single_delete6');
+ok((grep { m{OPTION_QUICK} } @{$options}), 'single_delete4');
+ok((grep { m{IGNORE} } @{$options}), 'single_delete5');
+ok((grep { m{TL_WRITE_DELAYED|TL_WRITE_CONCURRENT_INSERT} } @{$options}), 'single_delete6');
 
 my $tables = $single_delete->getTables();
 
@@ -72,7 +72,8 @@ ok($order->getFieldName() eq 'column_name', 'single_delete15');
 
 my $limits = $single_delete->getLimit();
 my $limit = $limits->[0];
-ok($limit eq '1234', 'single_delete16');
+ok(ref($limit) eq 'DBIx::MyParse::Item', 'single_delete16');
+ok($limit->getValue() eq '1234', 'single_delete17');
 
 
 #

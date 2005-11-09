@@ -64,7 +64,7 @@ foreach my $header (@headers) {
 
 	$enum_string =~ s{\/\*.*?\*\/}{}sgio;
 	
-	$enum_string =~ s{[^A-Za-z0-9,_]}{}sgio;
+	$enum_string =~ s{[^A-Za-z0-9,_=]}{}sgio;
 
 	my @enum_list = split(',', $enum_string);
 
@@ -84,6 +84,10 @@ int my_parse_$header->{enum_name} (const int enum_value, char * buff) {
 	switch(enum_value) {
 ";
 	foreach my $enum_item (@enum_list) {
+
+		if ($enum_item =~ m{^(.*?)=}sio) {
+			$enum_item = $1;
+		};
 
 		print CODE "
 		case $enum_item:

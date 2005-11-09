@@ -1,5 +1,7 @@
-use 5.008006;
 use ExtUtils::MakeMaker;
+
+use strict;
+
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
@@ -11,7 +13,7 @@ while (1) {
 	$mysql_path =~ s{[\r\n]}{};
 
 	if ($mysql_path eq '') {
-		$mysql_path = '/usr/src/mysql-4.1.13';
+		$mysql_path = '/usr/src/mysql-5.0.15';
 	}
 
 	$mysql_path = $mysql_path.'/';
@@ -23,17 +25,50 @@ while (1) {
 	};
 }
 
+
+my $mysql_makefile = $mysql_path.'/libmysqld/Makefile';
+
+if (! -e $mysql_makefile) {
+	print "$mysql_makefile does not exist. Did you run .\\configure for mysql's source?";
+	exit;
+}
+
+#
+# CCFLAGS must be taken from the flags used to compile libmysqld. The reason for that is that if the flags are not
+# identical, the THD class behaves differently in libmysqld than it does in my_parse_cc.cc, namely, the thd->command
+# member is located in a different place in memory. No attempt was made to determine which compile flag causes this behavoir.
+#
+# Also, if we compile our stuff with DDEBUG and libmysqld.so is not compiled with DDEBUG, crap will result.
+
+
+my $ccflags = `grep "^CXXFLAGS =" $mysql_makefile`;
+
+$ccflags =~ s{^CXXFLAGS = }{}sio;
+$ccflags =~ s{[\r\n\t]}{}sio;
+print "CCFLAGS = $ccflags\n";
+
+
+my $libs = `mysql_config --libmysqld-libs`;
+
+if (not defined $libs) {
+	print "Assuming default libs from 5.0.15.\n";
+	$libs = '-L/usr/lib/mysql -lmysqld -lz -lpthread -lcrypt -lnsl -lm -lpthread -lc -lnss_files -lnss_dns -lresolv -lc -lnss_files -lnss_dns -lresolv -lrt';
+}
+
+print "LIBS = $libs\n";
+
 WriteMakefile(
-    NAME              => 'DBIx::MyParse',
-    VERSION_FROM      => 'lib/DBIx/MyParse.pm', # finds $VERSION
- 	ABSTRACT_FROM  => 'lib/DBIx/MyParse.pm',
-       AUTHOR         => 'Philip Stoev <philip@stoev.org>',
-    LIBS              => qq{-L/usr/lib -L/usr/local/lib/mysql -L/usr/lib/mysql -lmysqld -lpthread -lnsl -lc -lrt -lz},
-    'INC'               => qq{-I. -I$mysql_path -I$mysql_path/sql -I$mysql_path/include},
-    CCFLAGS 	      => '-Wall -g -O3',
-    OBJECT	      => 'my_enum.o my_define.o my_parse_c.o my_parse_cc.o MyParse.o',
-    LD		      => 'g++',
-    CC		      => 'g++',
+	NAME		=> 'DBIx::MyParse',
+	VERSION_FROM	=> 'lib/DBIx/MyParse.pm', # finds $VERSION
+	ABSTRACT_FROM	=> 'lib/DBIx/MyParse.pm',
+	AUTHOR		=> 'Philip Stoev <philip@stoev.org>',
+	LIBS            => qq{-L/usr/lib -L/usr/local/lib/mysql -L/usr/lib/mysql -lmysqld -lz }.$libs,
+	'INC'		=> qq{-I. -I$mysql_path -I$mysql_path/sql -I$mysql_path/include -I$mysql_path/regex},
+
+	CCFLAGS		=> '-DEMBEDDED_LIBRARY -DMYSQL_SERVER -Wall '.$ccflags,
+	OBJECT		=> 'my_enum.o my_define.o my_parse_c.o my_parse_cc.o MyParse.o',
+	LD		=> 'g++',
+	CC		=> 'g++',
     depend => {
 	'my_parse_cc.cc' => 'my_define.h',
 	'my_parse_cc.cc' => 'my_enum.h',
