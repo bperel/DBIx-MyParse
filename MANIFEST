@@ -10,16 +10,28 @@ my_parse_c.c
 my_parse_cc.cc
 my_parse.h
 
+myparse.patch
+
+t/aggregate.t
+t/bench.t
+t/create.t
 t/delete.t
+t/drop.t
 t/error.t
 t/functions.t
 t/insert.t
-t/items.t
+t/modes.t
 t/MyParse.t
 t/params.t
+t/perm.t
+t/rename.t
 t/select.t
+t/serivce.t
+t/show.t
 t/subquery.t
+t/transaction.t
 t/twins.t
+t/types.t
 t/update.t
 t/vars.t
 

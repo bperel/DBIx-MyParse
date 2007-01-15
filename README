@@ -7,38 +7,39 @@ INSTALLATION
 
 To install this module type the following:
 
-   perl Makefile.PL
-   make
-   make test
-   make install
+A. Prepare your MySQL source
 
-DEPENDENCIES
+1. Download the MySQL source from http://dev.mysql.com/downloads/mysql/5.0.html and unzip it
 
-This module requires these other modules and libraries:
+2. Apply the patch
 
-	* The MySQL source
-	* libmysqld
+	# cd /usr/src/your-mysql-source
+	# cat /usr/src/DBIx-MyParse/myparse.patch | patch -p1
 
-You can find the MySQL source at 
+3. Configure the MySQL source
 
-http://dev.mysql.com/downloads/mysql/4.1.html
+	# cd /usr/src/your-mysql-source
+	# ./configure --with-embedded-server
+	# make
 
-near the bottom of the page, under the "Source Downloads" heading.
+You do NOT need to do "make install". This way, any other MySQL installations that you have will
+not be overwritten. You only need to have the mysql charsets directory, /usr/local/share/mysql/charsets
 
-To install the tar.gz source tree, you can use:
+If you do not have it, do:
 
-$ wget http://mysql.he.net/Downloads/MySQL-4.1/mysql-4.1.13a.tar.gz
-$ gzip -d mysql-4.1.13a.tar.gz
-$ tar xfv mysql-4.1.13a.tar.gz
-$ cd mysql-4.1.13a
-$ ./configure --with-embedded-server
+	# cd /usr/src/your-mysql-source
+	# cd sql/share
+	# make instal
 
-To install libmysqld, in case you do not have one already:
+B. Install DBIx::MyParse
 
-$ cd mysql-4.1.13
-$ make
-$ cd libmysqld
-$ make install
+	# perl Makefile.PL
+	# make install
+	# mkdir /tmp/myparse
+	# mkdir /tmp/myparse/test
+	# make test
+
+You will need to create /tmp/myparse and /tmp/myparse/test to run the test suite.
 
 POTENTIAL ISSUES
 
@@ -61,15 +62,14 @@ If you get:
 
 please try:
 
-	# cd mysql-4.1.14/sql/share
+	# cd your-mysql-source/sql/share
 	# make install
 
-or do a complete MySQL source install to get the same result
-
+or do a complete MySQL install to get the same result
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2005 by Philip Stoev <philip@stoev.org>
+Copyright (C) 2007 by Philip Stoev <philip@stoev.org>
 
 This library is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public Licence. Please check the 

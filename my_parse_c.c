@@ -27,59 +27,93 @@
 
 #include "assert.h"
 
-static void * thd;
-
-void my_parse_die() {
-	Perl_die("MySQL fatal error");
-}
-
-void * my_parse_get_thd() {
-	if (thd == NULL) {
-		thd = my_parse_init();
-	}
-	return thd;
-}
-
 void * my_parse_create_array () {
-
 	return newAV();
+}
 
+perl_object * my_parse_bless (
+	perl_object * array_perl,
+	const char * perl_class
+) {
+	SV * array_perl_ref = newRV_noinc((SV*) array_perl);
+        sv_bless(array_perl_ref, gv_stashpv(perl_class, TRUE));
+	return (void *) array_perl_ref;
+}
+
+void * my_parse_get_array (
+	perl_object * array_ref,
+	int index
+) {
+	void * array_ref_real;
+
+	if (SvROK((SV *) array_ref)) {
+		array_ref_real = (void *) SvRV((SV *) array_ref);
+	} else {
+		array_ref_real = array_ref;
+	}
+
+	SV ** fetch_result = av_fetch ((AV *) array_ref_real, index, 0);
+
+	if (fetch_result) {
+		
+		return (void *) SvREFCNT_inc(*fetch_result);
+	} else {
+		return NULL;
+	}
+}
+
+void * my_parse_get_string (
+	perl_object * array_ref,
+	int index
+) {
+	void * array_ref_real;
+
+        if (SvROK((SV *) array_ref)) {
+                array_ref_real = (void *) SvRV((SV *) array_ref);
+        } else {
+                array_ref_real = array_ref;
+        }
+
+        SV ** fetch_result = av_fetch ((AV *) array_ref_real, index, 0);
+
+        if (fetch_result) {
+		SV * sv_ptr = *fetch_result;
+                return (void *) SvPV_nolen(sv_ptr);
+        } else {
+                return NULL;
+        }
 }
 
 void * my_parse_set_array (
-	void * array_ref,
+	perl_object * array_ref,
 	int index,
 	void * item_ref,
-	int item_type,
-	char * class_name
+	int item_type
 ) {
 
-	AV * array = (AV *) array_ref;
-
-	assert(array);
-
-	assert(SvTYPE(array) == SVt_PVAV);
-
-	assert(item_ref);
-
 	SV * item = NULL;
-	unsigned long * item_long;
+	unsigned long * item_long_ptr;
+	unsigned long item_long;
+	int * int_ptr;
 
 	switch(item_type) {
+		case MYPARSE_ARRAY_INT:
+			int_ptr = (int *) item_ref;
+			item_long = (unsigned long) *int_ptr;
+			item = newSViv((IV) item_long);
+			break;
 		case MYPARSE_ARRAY_LONG:
-			item_long = (unsigned long *) item_ref;
-			item = newSViv((IV) *item_long);
+			item_long_ptr = (unsigned long *) item_ref;
+			item = newSViv((IV) *item_long_ptr);
 			break;
 		case MYPARSE_ARRAY_STRING:
 			item = newSVpv((char *) item_ref, strlen((char *) item_ref));
 			break;
 		case MYPARSE_ARRAY_REF:
-			assert( SvTYPE((SV *) item_ref) == SVt_PVAV );
-
-			item = newRV_noinc((SV*) item_ref);
-
-			if (class_name) {
-				sv_bless(item, gv_stashpv(class_name, TRUE));
+			if (SvROK((SV*) item_ref)) {
+				item = (SV *) item_ref;
+			} else {
+				item = newRV_inc((SV*) item_ref);
 			}
 			break;
 		default:
@@ -88,11 +122,22 @@ void * my_parse_set_array (
 
 	assert(item);
 
+	void * array_ref_real;
+
+	if (SvROK((SV *) array_ref)) {
+		array_ref_real = (void *) SvRV((SV *) array_ref);
+	} else {
+		array_ref_real = array_ref;
+	}
+
 	if (index == MYPARSE_ARRAY_APPEND) {
-		av_push(array, item);
+		av_push((AV *) array_ref_real, item);
+	} else if (index == MYPARSE_ARRAY_PREPEND) {
+		av_unshift((AV *) array_ref_real, 1);
+		av_store((AV *) array_ref_real, 0, item);
 	} else {
 		assert(index < 32);
-		av_store(array, index, item);
+		av_store((AV *) array_ref_real, index, item);
 	}
 
 	return item;

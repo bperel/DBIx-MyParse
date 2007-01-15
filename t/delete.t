@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 26;
+use Test::More tests => 25;
 BEGIN {
 	use_ok('DBIx::MyParse');
 	use_ok('DBIx::MyParse::Query');
@@ -21,6 +21,7 @@ BEGIN {
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 my $parser = DBIx::MyParse->new();
+$parser->setDatabase('test');
 
 ok(ref($parser) eq 'DBIx::MyParse', 'new_parser');
 
@@ -45,7 +46,7 @@ ok(ref($options) eq 'ARRAY', 'single_delete3');
 
 ok((grep { m{OPTION_QUICK} } @{$options}), 'single_delete4');
 ok((grep { m{IGNORE} } @{$options}), 'single_delete5');
-ok((grep { m{TL_WRITE_DELAYED|TL_WRITE_CONCURRENT_INSERT} } @{$options}), 'single_delete6');
+ok((grep { m{TL_WRITE_DELAYED|TL_WRITE_CONCURRENT_INSERT|TL_WRITE_LOW_PRIORITY} } @{$options}), 'single_delete6');
 
 my $tables = $single_delete->getTables();
 
@@ -93,7 +94,5 @@ ok($multiple_delete->getCommand() eq 'SQLCOM_DELETE_MULTI' , 'multiple_delete2')
 
 my $ref_tables = $multiple_delete->getTables();
 my $delete_tables = $multiple_delete->getDeleteTables();
-ok(scalar(@{$ref_tables}) == 3, 'multiple_delete3');
-ok(scalar(@{$delete_tables}) == 2, 'multiple_delete4');
-
+ok(scalar(@{$delete_tables}) == 2, 'multiple_delete3');
 

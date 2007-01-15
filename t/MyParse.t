@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 35;
+use Test::More tests => 34;
 BEGIN {
 	use_ok('DBIx::MyParse');
 	use_ok('DBIx::MyParse::Query');
@@ -17,7 +17,7 @@ BEGIN {
 # Insert your test code below, the Test::More module is use()ed here so read
 # its man page ( perldoc Test::More ) for help writing this test script.
 
-my $parser = DBIx::MyParse->new();
+my $parser = DBIx::MyParse->new(db => 'test');
 
 ok(ref($parser) eq 'DBIx::MyParse', 'new_parser');
 
@@ -25,7 +25,7 @@ ok(ref($parser) eq 'DBIx::MyParse', 'new_parser');
 # SELECT tests
 #
 
-my $select_query = DBIx::MyParse->parse("
+my $select_query = $parser->parse("
 	SELECT field_name
 	FROM table_name
 	WHERE where_condition
@@ -51,10 +51,9 @@ ok($select_item->getFieldName() eq 'field_name', 'select_item3');
 
 my $tables = $select_query->getTables();
 ok(ref($tables) eq 'ARRAY', 'select_tables1');
-ok(scalar(@{$tables}) == 1, 'select_tables2');
 my $table = $tables->[0];
-ok(ref($table) eq 'DBIx::MyParse::Item', 'select_table1');
-ok($table->getTableName() eq 'table_name', 'select_table2');
+ok(ref($table) eq 'DBIx::MyParse::Item', 'select_tables2');
+ok($table->getTableName() eq 'table_name', 'select_table3');
 
 my $where = $select_query->getWhere();
 
@@ -89,9 +88,6 @@ ok(ref($limit) eq 'ARRAY', 'select_limit1');
 
 my $limit1 = $limit->[0];
 my $limit2 = $limit->[1];
-
-use Data::Dumper;
-print Dumper $limit;
 
 ok(ref($limit1) eq 'DBIx::MyParse::Item', 'select_limit2');
 ok(ref($limit2) eq 'DBIx::MyParse::Item', 'select_limit3');

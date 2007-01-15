@@ -1,11 +1,11 @@
 # Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl twins.t'
+# `make test'. After `make install' it should work as `perl MyParse.t'
 
 #########################
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 4;
+use Test::More tests => 6;
 BEGIN {
 	use_ok('DBIx::MyParse');
 	use_ok('DBIx::MyParse::Query');
@@ -18,15 +18,14 @@ BEGIN {
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 my $parser = DBIx::MyParse->new();
-$parser->setDatabase('test');
+
 ok(ref($parser) eq 'DBIx::MyParse', 'new_parser');
-
+$parser->setDatabase('test');
 #
-# This is the twins query from
-# http://dev.mysql.com/doc/mysql/en/twin-pool.html
+# SELECT tests
 #
 
-my $twins = $parser->parse("
+my $twins_query = $parser->parse("
 SELECT
     CONCAT(p1.id, p1.tvab) + 0 AS tvid,
     CONCAT(p1.christian_name, ' ', p1.surname) AS Name,
@@ -112,7 +111,13 @@ WHERE
     OR h.status = 'Died' OR h.status = 'Other')
 ORDER BY
     tvid;
+
 ");
 
-use Data::Dumper;
-print Dumper $twins;
+ok(ref($twins_query) eq 'DBIx::MyParse::Query', 'benchmark');
+ok($twins_query->getCommand() eq 'SQLCOM_SELECT', 'benchmark2');
+
+use Benchmark;
+
+Benchmark::timethese(10000, {  twins => sub {$parser->parse($twins_query) }});
+

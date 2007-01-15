@@ -64,7 +64,7 @@ foreach my $header (@headers) {
 
 	$enum_string =~ s{\/\*.*?\*\/}{}sgio;
 	
-	$enum_string =~ s{[^A-Za-z0-9,_=]}{}sgio;
+	$enum_string =~ s{[^A-Za-z0-9,_=-]}{}sgio;
 
 	my @enum_list = split(',', $enum_string);
 

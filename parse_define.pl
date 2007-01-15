@@ -5,6 +5,8 @@ use warnings;
 
 my $path = $ARGV[0];
 
+my %included;
+
 my @headers = (
 	{
 		# We specify the list manually since there is no naming convention
@@ -40,11 +42,23 @@ my @headers = (
 #			'OPTION_INTERNAL_SUBTRANSACTIONS'
 		],
 		function_name => 'my_parse_query_options'
-	}, {
+	},
+	{
+		file_name => 'sql/mysql_priv.h',
+		define_type => 'bit',
+		define_list => [
+			'TL_OPTION_UPDATING',
+			'TL_OPTION_FORCE_INDEX',
+			'TL_OPTION_IGNORE_LEAVES',
+			'TL_OPTION_ALIAS'
+		],
+		function_name => 'my_parse_table_join_options'
+	},
+	{
 		file_name => 'include/mysqld_error.h',
 		function_name => 'my_parse_errno',
 		define_type => 'byte'
-	}	
+	}
 );
 
 my $output_header = 'my_define.h';
@@ -75,6 +89,11 @@ void * $header->{function_name} (unsigned long define_value);
 
 #include <$header->{file_name}>
 
+		" if not defined $included{$header->{file_name}};
+		$included{$header->{file_name}} = 1;
+
+print CODE "
+
 void * $header->{function_name} (unsigned long define_value) {
 
 	void * array = my_parse_create_array();
@@ -91,6 +110,11 @@ void $header->{function_name} (unsigned long define_value, char * buff);
 		print CODE "
 
 #include <$header->{file_name}>
+
+" if not defined $included{$header->{file_name}};
+		$included{$header->{file_name}} = 1;
+
+		print CODE "
 
 void $header->{function_name} (unsigned long define_value, char * buff) {
 
@@ -123,8 +147,7 @@ void $header->{function_name} (unsigned long define_value, char * buff) {
 			array,
 			MYPARSE_ARRAY_APPEND,
 			(void *) \"$define_item\",
-			MYPARSE_ARRAY_STRING,
-			NULL
+			MYPARSE_ARRAY_STRING
 		);
 	}
 ";

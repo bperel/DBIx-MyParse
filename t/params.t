@@ -18,6 +18,7 @@ BEGIN {
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 my $parser = DBIx::MyParse->new();
+$parser->setDatabase('test');
 
 ok(ref($parser) eq 'DBIx::MyParse', 'new_parser');
 
