@@ -9,12 +9,12 @@ To install this module type the following:
 
 A. Prepare your MySQL source
 
-1. Download the MySQL source from http://dev.mysql.com/downloads/mysql/5.0.html and unzip it
+1. Download the latest 5.0 MySQL source from http://dev.mysql.com/downloads/mysql/5.0.html and unzip it
 
 2. Apply the patch
 
 	# cd /usr/src/your-mysql-source
-	# cat /usr/src/DBIx-MyParse/myparse.patch | patch -p1
+	# cat /usr/src/DBIx-MyParse/mysql.patch | patch -p1
 
 3. Configure the MySQL source
 

@@ -6,7 +6,7 @@ use warnings;
 use DBIx::MyParse::Query;
 use DBIx::MyParse::Item;
 
-our $VERSION = '0.80';
+our $VERSION = '0.81';
 
 use constant MYPARSE_DB		=> 0;
 use constant MYPARSE_OPTIONS	=> 1;

@@ -93,17 +93,17 @@ diff -u -r mysql-5.0.33/sql/item_row.h mysql-5.0.33-myparse/sql/item_row.h
 diff -u -r mysql-5.0.33/sql/item_strfunc.h mysql-5.0.33-myparse/sql/item_strfunc.h
 --- mysql-5.0.33/sql/item_strfunc.h	2007-01-09 07:51:08.000000000 -0500
 +++ mysql-5.0.33-myparse/sql/item_strfunc.h	2007-01-12 18:16:30.000000000 -0500
-@@ -357,9 +357,8 @@
- 
+@@ -357,9 +357,9 @@
  class Item_func_encode :public Item_str_func
  {
-- protected:
+  protected:
 -  SQL_CRYPT sql_crypt;
+   String seed;
  public:
 +  SQL_CRYPT sql_crypt;
-   Item_func_encode(Item *a, char *seed):
-     Item_str_func(a),sql_crypt(seed) {}
-   String *val_str(String *);
+   Item_func_encode(Item *a, char *seed_arg):
+     Item_str_func(a), sql_crypt(seed_arg)
+     {
 diff -u -r mysql-5.0.33/sql/item_subselect.h mysql-5.0.33-myparse/sql/item_subselect.h
 --- mysql-5.0.33/sql/item_subselect.h	2007-01-09 07:51:49.000000000 -0500
 +++ mysql-5.0.33-myparse/sql/item_subselect.h	2007-01-12 18:16:30.000000000 -0500

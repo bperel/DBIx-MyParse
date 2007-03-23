@@ -5,23 +5,19 @@ use strict;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-my $mysql_path;
-my $default_mysql_path = '/usr/src/mysql-5.0.33';
+my $default_mysql_path ='/usr/src/mysql-5.0.37';
 
-while (1) {
-	print "Please provide the path to your MySQL source tree [$default_mysql_path]: ";
-	$mysql_path = <STDIN>;
-	$mysql_path =~ s{[\r\n]}{};
+print "Please provide the path to your MySQL source tree [$default_mysql_path]: ";
+my $mysql_path = <STDIN>;
+$mysql_path =~ s{[\r\n]}{};
 
-	$mysql_path = $default_mysql_path if $mysql_path eq '';
+$mysql_path = $default_mysql_path if ($mysql_path eq '');
 
-	$mysql_path = $mysql_path.'/';
-	my $check_file = $mysql_path."libmysqld/libmysqld.a";
-	if (-e $check_file) {
-		last;
-	} else {
-		print "File $check_file does not exist: $!. Please try again.\n";
-	};
+$mysql_path = $mysql_path.'/';
+my $check_file = $mysql_path."libmysqld/libmysqld.a";
+if (! -e $check_file) {
+	print "File $check_file does not exist: $!. Please try again.\n";
+	exit;
 }
 
 my $makefile_path = $mysql_path.'/libmysql/Makefile';

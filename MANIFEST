@@ -10,7 +10,7 @@ my_parse_c.c
 my_parse_cc.cc
 my_parse.h
 
-myparse.patch
+mysql.patch
 
 t/aggregate.t
 t/bench.t

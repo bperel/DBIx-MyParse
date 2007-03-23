@@ -3,7 +3,7 @@ package DBIx::MyParse::Item;
 use strict;
 use warnings;
 
-our $VERSION = '0.80';
+our $VERSION = '0.81';
 
 #
 # If you change those constants, do not forget to change
