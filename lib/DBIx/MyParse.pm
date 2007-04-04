@@ -6,7 +6,7 @@ use warnings;
 use DBIx::MyParse::Query;
 use DBIx::MyParse::Item;
 
-our $VERSION = '0.81';
+our $VERSION = '0.82';
 
 use constant MYPARSE_DB		=> 0;
 use constant MYPARSE_OPTIONS	=> 1;
@@ -90,6 +90,10 @@ sub setDatabase {
 	$parser->[MYPARSE_DB] = $db;
 }
 
+sub getDatadir {
+	return $_[0]->[MYPARSE_DATADIR];
+}
+
 sub parse {
 	my ($parser, $query_text) = @_;
 	return $parser->parse_xs($parser->[MYPARSE_DB], $query_text);
@@ -123,6 +127,12 @@ lexx/yacc-based SQL parser, complete with subqueries and various MySQL extension
 
 Please check the documentation for L<DBIx::MyParse::Query|DBIx::MyParse::Query> to see how you can access
 the parse tree produced by C<parse()>. The parse tree itself consists of L<DBIx::MyParse::Item|DBIx::MyParse::Item> objects.
+
+=head1 INSTALLATION
+
+A binary RPM created using C<cpan2rpm> on a Fedora Core 6 is available from L<http://www.sf.net/projects/myparse>.
+Alternatively, please see the C<README> for details on compiling the module from scratch. You will need to patch and
+compile the MySQL source.
 
 =head1 CONSTRUCTOR
 
@@ -172,7 +182,7 @@ The following SQL statements are not supported:
 
 	UNION
 	ALTER
-	CREATE
+	CREATE except CREATE DATABASE
 	DROP except DROP DATABASE and DROP TABLE
 	RENAME DATABASE
 	HANDLER
@@ -184,6 +194,7 @@ The following esoteric SQL constructs are not currently supported:
 	* LOAD DATA INFILE
 	* SELECT INTO OUTFILE
 	* SELECT PROCEDURE
+	* CREATE DATABASE with CHARSET or COLLATION
 
 The following SQL functions are not currenly supported:
 
@@ -195,6 +206,7 @@ The following SQL functions are not currenly supported:
 	* NAME_CONST()
 	* MATCH WITH QUERY EXPANSION
 	* MATCH IN BOOLEAN MODE
+	* TRIM()
 
 =head1 ADVANTAGES OF THE APPROACH
 
@@ -228,6 +240,14 @@ Some of MySQL's code is not friendly towards being (ab)used in the manner employ
 are object methods declared Private for no obvious reasons.
 
 MySQL is GPL, so this module is GPL, please see the COPYRIGHT section below for more information.
+
+=head1 TESTING
+
+Apart from the standard C<make test> test suite, the following approaches were used to test this module:
+
+	* The MySQL test suite
+	* the crash-me script from the MySQL benchmark suite
+	* DBD::mysql tests
 
 =head1 SEE ALSO
 

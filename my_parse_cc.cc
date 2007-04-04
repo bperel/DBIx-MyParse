@@ -794,7 +794,10 @@ perl_object * my_parse_inner(THD * thd, st_select_lex * select_lex, bool in_subq
 		}
 	}
 
-	if (lex->sql_command == SQLCOM_DROP_DB) { 
+	if (
+		(lex->sql_command == SQLCOM_CREATE_DB) ||
+		(lex->sql_command == SQLCOM_DROP_DB)
+	) {
 		perl_object * database_perl = my_parse_create_array();
 		perl_object * database_perl_ref = my_parse_bless(database_perl, MYPARSE_ITEM_CLASS);
 		my_parse_set_array( database_perl, MYPARSE_ITEM_ITEM_TYPE, (void *) "DATABASE_ITEM", MYPARSE_ARRAY_STRING);
@@ -807,6 +810,13 @@ perl_object * my_parse_inner(THD * thd, st_select_lex * select_lex, bool in_subq
 		(lex->sql_command == SQLCOM_DROP_TABLE)
 	) && lex->drop_if_exists) {
 		my_parse_set_array( options_perl, MYPARSE_ARRAY_APPEND, (void *) "DROP_IF_EXISTS", MYPARSE_ARRAY_STRING);
+	}
+
+	if (
+		(lex->sql_command == SQLCOM_CREATE_DB) &&
+		(lex->create_info.options == HA_LEX_CREATE_IF_NOT_EXISTS)
+	) {
+		my_parse_set_array( options_perl, MYPARSE_ARRAY_APPEND, (void *) "CREATE_IF_NOT_EXISTS", MYPARSE_ARRAY_STRING);
 	}
 
 	if (lex->sql_command == SQLCOM_DROP_TABLE) {

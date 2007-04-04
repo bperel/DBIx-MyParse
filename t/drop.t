@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 19;
+use Test::More tests => 26;
 BEGIN {
 	use_ok('DBIx::MyParse');
 	use_ok('DBIx::MyParse::Query');
@@ -29,16 +29,19 @@ $parser->setDatabase('test');
 
 ok(ref($parser) eq $parser_class_name, 'new_parser');
 
-my $drop_database = $parser->parse("
-	DROP DATABASE IF EXISTS db_name
-");
+my $drop_database1 = $parser->parse("DROP DATABASE IF EXISTS db_name");
+my $drop_database2 = $parser->parse($drop_database1->print());
 
-ok(ref($drop_database) eq $query_class_name, 'drop_database1');
-ok($drop_database->getCommand() eq 'SQLCOM_DROP_DB','drop_database2');
-my $db_item = $drop_database->getSchemaSelect();
-ok(ref($db_item) eq 'DBIx::MyParse::Item', 'drop_database3');
-ok($db_item->getItemType() eq 'DATABASE_ITEM', 'drop_database4');
-ok($db_item->getDatabaseName() eq 'db_name','drop_database5');
+foreach my $drop_database ($drop_database1, $drop_database2) {
+	ok(ref($drop_database) eq $query_class_name, 'drop_database1');
+	ok($drop_database->getCommand() eq 'SQLCOM_DROP_DB','drop_database2');
+	my $db_item = $drop_database->getSchemaSelect();
+	ok(ref($db_item) eq 'DBIx::MyParse::Item', 'drop_database3');
+	ok($db_item->getItemType() eq 'DATABASE_ITEM', 'drop_database4');
+	ok($db_item->getDatabaseName() eq 'db_name','drop_database5');
+	
+	ok($drop_database->getOption("DROP_IF_EXISTS"), 'drop_database6');
+}
 
 
 my $drop_table = $parser->parse("

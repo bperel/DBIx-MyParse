@@ -3,7 +3,7 @@ package DBIx::MyParse::Item;
 use strict;
 use warnings;
 
-our $VERSION = '0.81';
+our $VERSION = '0.82';
 
 #
 # If you change those constants, do not forget to change
@@ -449,8 +449,8 @@ sub print {
 		$printed = $item->getValue();
 	} elsif ($type eq 'STRING_ITEM') {
 		$printed = $item->getValue();
-		$printed =~ s{'}{\'}sgio;
 		$printed =~ s{\\}{\\\\}sgio;
+		$printed =~ s{'}{\\'}sgio;
 		$printed = "'".$printed."'";
 		$printed = '_'.$item->getCharset().' '.$printed if defined $item->getCharset();
 	} elsif (
@@ -578,6 +578,13 @@ sub _printFunc {
 	my $args = $item->getArguments();
 	my $func_placement = $func_placement{$func_type};
 
+	if (
+		($func_name eq 'add_time') ||
+		($func_name eq 'sub_time')
+	) {
+		$func_name =~ s{_}{}sgio;
+	}
+
 	if (my ($cast_type) = $func_name =~ m{^cast_as_(.*)}sio) {
 		if (defined $args->[1]) {
 			return "CAST(".$args->[0]->print()." AS ".uc($cast_type)."(".$args->[1]->getValue()."))";
@@ -662,9 +669,11 @@ sub _printFunc {
 	) {
 		return $args->[0]->print()." IS NOT NULL";
 	} elsif ($func_type eq 'BETWEEN') {
-		return "(".$args->[0]->print()." BETWEEN ".$args->[1]->print()." AND ".$args->[2]->print().")";
-	} elsif ($func_type eq 'NOT_BETWEEN') {
-		return "(".$args->[0]->print()." NOT BETWEEN ".$args->[1]->print()." AND ".$args->[2]->print().")";
+		if (uc($func_name) eq 'BETWEEN') {
+			return "(".$args->[0]->print()." BETWEEN ".$args->[1]->print()." AND ".$args->[2]->print().")";
+		} elsif ($func_name eq 'NOT_BETWEEN') {
+			return "(".$args->[0]->print()." NOT BETWEEN ".$args->[1]->print()." AND ".$args->[2]->print().")";
+		}
 	} elsif ($func_type eq 'IN_FUNC') {
 		my @args = @{$args};
 		my $first_arg = shift @args;
@@ -869,7 +878,7 @@ if C<getType() eq 'SUM_FUNC_ITEM'>, C<getFuncType()> can be any of the aggregate
 in enum Sumfunctype in F<sql/item_sum.h>:
 
 	enum Sumfunctype {
-		COUNT_FUNC,COUNT_DISTINCT_FUNC,SUM_FUNC,AVG_FUNC,MIN_FUNC,
+		COUNT_FUNC,COUNT_DISTINCT_FUNC,SUM_FUNC, SUM_DISTINCT_FUNC, AVG_FUNC,MIN_FUNC,
 		MAX_FUNC,UNIQUE_USERS_FUNC,STD_FUNC,VARIANCE_FUNC,SUM_BIT_FUNC,
 		UDF_SUM_FUNC,GROUP_CONCAT_FUNC
 	};
@@ -890,6 +899,12 @@ the array is an DBIx::MyParse::Item object, even if it is a simple string or a f
 =over
 
 =head2 SPECIAL FUNCTIONS
+
+Some functions are not entirely supported by L<DBIx::MyParse>, e.g. some fancy arguments may be missing from the
+parse tree. Unfortunately, there is no way to know if you are missing any arguments. For a list of the currently
+problematic functions, see L<DBIx::MyParse>.
+
+The functions below are fully supported, however there are oddities you need to have in mind:
 
 =item C<CAST(expr AS type (length))>, C<CONVERT(expr, type)>, C<SELECT BINARY expr>
 
@@ -917,6 +932,10 @@ interval being used. A string will be returned, as listed on the table in sectio
 all strings are returned prefixed with C<'INTERVAL_'> e.g. a day interval will be returned at C<'INTERVAL_DAY'> and not
 just C<DAY>.
 
+=item C<ADDTIME()> and C<SUBTIME()>
+
+C<getFuncName()> will return C<'add_time'> and C<'sub_time'> respectively, that is, with an underscore between the two words.
+
 =item C<CASE WHEN condition THEN result1 ELSE result2 END>
 
 For this form of C<CASE>, C<getFuncName()> will return C<'case'>. If C<getArguments()> returns an odd number of arguments,
@@ -934,7 +953,8 @@ C<getFuncType()> will return either C<'ISNULL_FUNC'> or C<'ISNOTNULL_FUNC'>
 
 =item C<expr BETWEEN value AND value> and C<expr NOT BETWEEN value AND value>
 
-C<getFuncType()> will return either C<'BETWEEN'> or C<'NOT_BETWEEN'>.
+C<getFuncType()> will return C<'BETWEEN'>. C<getFuncName()> will return C<'BETWEEN'> or C<'NOT_BETWEEN'>, however the
+case of the letters in C<'BETWEEN'> can vary.
 
 =item C<expr IN (list)> and C<expr NOT IN (list)>
 

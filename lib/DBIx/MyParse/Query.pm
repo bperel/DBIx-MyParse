@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.81';
+our $VERSION = '0.82';
 
 #
 # If you change those constants, do not forget to change
@@ -256,7 +256,8 @@ sub getSchemaSelect {
 		($orig_command eq 'SQLCOM_SHOW_TABLES') ||
 		($orig_command eq 'SQLCOM_SHOW_TABLE_STATUS') ||
 		($command eq 'SQLCOM_CHANGE_DB') ||
-		($command eq 'SQLCOM_DROP_DB')
+		($command eq 'SQLCOM_DROP_DB') ||
+		($command eq 'SQLCOM_CREATE_DB')
 	) {
 		return $query->[MYPARSE_SCHEMA_SELECT];
 	} else {
@@ -306,6 +307,8 @@ sub print {
 		($command eq 'SQLCOM_DROP_TABLE')
 	) {
 		return $query->_printDrop();
+	} elsif ($command eq 'SQLCOM_CREATE_DB') {
+		return $query->_printCreate();
 	} elsif ($command eq 'SQLCOM_RENAME_TABLE') {
 		return $query->_printRename();
 	} elsif ($command eq 'SQLCOM_TRUNCATE') {
@@ -368,6 +371,16 @@ sub _printDrop {
 		my $drop_restrict = $query->getOption("DROP_RESTRICT") ? " RESTRICT" : "";
 		my $drop_cascade = $query->getOption("DROP_CASCADE") ? " CASCADE" : "";
 		return "DROP ".$drop_temporary."TABLE ".$drop_if_exists.join(', ', map { $_->_printTable(0) } @{$query->getTables()}).$drop_restrict.$drop_cascade;
+	}
+}
+
+sub _printCreate {
+	my $query = shift;
+	my $command = $query->getCommand();
+	
+	if ($command eq 'SQLCOM_CREATE_DB') {
+		my $create_if_not_exists = $query->getOption("CREATE_IF_NOT_EXISTS") ? "IF NOT EXISTS " : "";
+		return "CREATE DATABASE ".$create_if_not_exists.$query->getSchemaSelect()->print();
 	}
 }
 
@@ -651,7 +664,7 @@ The commands that are currently supported (that is, a parse tree is created for 
 	"SQLCOM_BEGIN",		"SQLCOM_COMMIT",	"SQLCOM_ROLLBACK",
 	"SQLCOM_SAVEPOINT",	"SQLCOM_ROLLBACK_TO_SAVEPOINT", "SQLCOM_RELEASE_SAVEPOINT"
 
-	"SQLCOM_DROP_DB",	"SQLCOM_DROP_TABLE",	"SQLCOM_RENAME_TABLE"
+	"SQLCOM_DROP_DB",	"SQLCOM_CREATE_DB",	"SQLCOM_DROP_TABLE",	"SQLCOM_RENAME_TABLE"
 
 Please note that the returned value is a string, and not an integer. Please read the section
 COMMANDS below for notes on individual commands
@@ -883,9 +896,9 @@ database being changed to is still found in the object that C<getSchemaSelect()>
 
 Please see C<t/show.t> for more examples on how to parse those queries.
 
-	"SQLCOM_DROP_DB"
+	"SQLCOM_DROP_DB" and "SQLCOM_CREATE_DB"
 
-also uses C<getSchemaSelect()>. The C<"DROP_IF_EXISTS"> option may be present.
+also uses C<getSchemaSelect()>. A C<"DROP_IF_EXISTS"> or C<"CREATE_IF_NOT_EXISTS"> option may be present.
 
 =head1 Dumping queries
 

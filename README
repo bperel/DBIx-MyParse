@@ -5,7 +5,8 @@ This module provides access to the MySQL SQL parser.
 
 INSTALLATION
 
-To install this module type the following:
+A binary RPM built using cpan2rpm on a Fedora Core 6 is available from http://www.sf.net/projects/myparse. To compile
+the module from scratch please do the following:
 
 A. Prepare your MySQL source
 
