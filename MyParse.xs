@@ -51,8 +51,7 @@ CODE:
 
 	char * query = SvPV_nolen(sv_query);
 	char * db = SvPV_nolen(sv_db);
-
-	RETVAL = (SV *) my_parse_outer( (void *) parser_perl, db, query ); 
+	RETVAL = (SV *) my_parse_outer( (void *) parser_perl, db, query );
 OUTPUT:
 	RETVAL	
 

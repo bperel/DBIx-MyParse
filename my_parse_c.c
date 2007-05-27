@@ -113,7 +113,7 @@ void * my_parse_set_array (
 			if (SvROK((SV*) item_ref)) {
 				item = (SV *) item_ref;
 			} else {
-				item = newRV_inc((SV*) item_ref);
+				item = newRV_noinc((SV*) item_ref);
 			}
 			break;
 		default:

@@ -647,7 +647,7 @@ perl_object * my_parse_outer(perl_object * parser, char * db, char * query) {
 	}
 
 	THD * thd = global_thd;
-
+			
 	alloc_query(thd, query, strlen(query) + 1);
 
 	mysql_init_query(thd, (uchar *) thd->query, thd->query_length);
@@ -688,14 +688,16 @@ perl_object * my_parse_outer(perl_object * parser, char * db, char * query) {
 		query_perl_ref = my_parse_inner( thd, &lex->select_lex, 0);
 	}
 
-	lex_end(lex);
+	query_cache_abort(&thd->net);
+	lex->unit.cleanup();
 	close_thread_tables(thd);
-/*	free_items(thd->free_list); */
 	thd->end_statement();
 	thd->cleanup_after_query();
+	lex_end(lex);
+	thd->packet.shrink(thd->variables.net_buffer_length); // Reclaim some memory
+	free_root(thd->mem_root,MYF(MY_KEEP_PREALLOC));
 
 	return query_perl_ref;
-
 }
 
 perl_object * my_parse_order(THD * thd, st_select_lex * select_lex, ORDER * start_order) {

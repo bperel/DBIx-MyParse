@@ -24,7 +24,7 @@ A. Prepare your MySQL source
 	# make
 
 You do NOT need to do "make install". This way, any other MySQL installations that you have will
-not be overwritten. You only need to have the mysql charsets directory, /usr/local/share/mysql/charsets
+not be overwritten. You only need to have a populated /usr/local/share/mysql/ directory (containing errmsg.txt).
 
 If you do not have it, do:
 
@@ -67,6 +67,13 @@ please try:
 	# make install
 
 or do a complete MySQL install to get the same result
+
+If you get:
+
+Unable to initialize libmysqld. at /usr/local/lib/perl5/site_perl/5.8.8/i686-linux/DBIx/MyParse.pm line 83
+
+Please make sure you have the /usr/local/share/mysql/ directory populated, see step A.3. above.
+
 
 COPYRIGHT AND LICENCE
 
