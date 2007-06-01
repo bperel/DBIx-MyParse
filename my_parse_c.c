@@ -31,12 +31,16 @@ void * my_parse_create_array () {
 	return newAV();
 }
 
+void my_parse_free_array (perl_object * array_perl) {
+	SvREFCNT_dec((SV *) array_perl);
+}
+
 perl_object * my_parse_bless (
 	perl_object * array_perl,
 	const char * perl_class
 ) {
 	SV * array_perl_ref = newRV_noinc((SV*) array_perl);
-        sv_bless(array_perl_ref, gv_stashpv(perl_class, TRUE));
+	sv_bless(array_perl_ref, gv_stashpv(perl_class, TRUE));
 	return (void *) array_perl_ref;
 }
 
@@ -55,8 +59,7 @@ void * my_parse_get_array (
 	SV ** fetch_result = av_fetch ((AV *) array_ref_real, index, 0);
 
 	if (fetch_result) {
-		
-		return (void *) SvREFCNT_inc(*fetch_result);
+		return (void *) *fetch_result;
 	} else {
 		return NULL;
 	}

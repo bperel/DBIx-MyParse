@@ -1,6 +1,6 @@
 /*
    DBIx::MyParse - a glue between Perl and MySQL's SQL parser
-   Copyright (C) 2005 Philip Stoev
+   Copyright (C) 2005 - 2007 Philip Stoev
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -627,6 +627,8 @@ perl_object * my_parse_item(THD * thd, Item * item) {
 
 	if (has_args) {
 		my_parse_set_array( perl_item, MYPARSE_ITEM_ARGUMENTS, args_perl, MYPARSE_ARRAY_REF);
+	} else {
+		my_parse_free_array( args_perl );
 	}
 
 	if (item_value_ref) {

@@ -12,6 +12,7 @@ extern void * my_parse_outer(perl_object * parser, char * db, char * query);
 perl_object * my_parse_bless(perl_object * array_ref, const char * bless);
 
 void * my_parse_create_array ();
+void my_parse_free_array (perl_object * array_ref);
 
 void * my_parse_get_string ( perl_object * array_ref, int index );
 void * my_parse_get_array ( perl_object * array_ref, int index );

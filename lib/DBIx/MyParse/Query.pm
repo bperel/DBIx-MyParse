@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.83';
+our $VERSION = '0.84';
 
 #
 # If you change those constants, do not forget to change
