@@ -14,6 +14,8 @@ perl_object * my_parse_bless(perl_object * array_ref, const char * bless);
 void * my_parse_create_array ();
 void my_parse_free_array (perl_object * array_ref);
 
+void * my_parse_create_string (const char * string, size_t length);
+
 void * my_parse_get_string ( perl_object * array_ref, int index );
 void * my_parse_get_array ( perl_object * array_ref, int index );
 
@@ -100,6 +102,7 @@ void * my_parse_set_array ( perl_object * array_ref, int index, void * item_ref,
 #define MYPARSE_ARRAY_REF	1
 #define MYPARSE_ARRAY_LONG	2
 #define MYPARSE_ARRAY_INT	3
+#define MYPARSE_ARRAY_SV	4
 
 #define MYPARSE_DB		0
 #define MYPARSE_OPTIONS		1

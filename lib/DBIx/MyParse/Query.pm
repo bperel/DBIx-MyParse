@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.84';
+our $VERSION = '0.86';
 
 #
 # If you change those constants, do not forget to change
@@ -399,8 +399,8 @@ sub _printSelect {
 	my $buffer_result = $query->getOption('OPTION_BUFFER_RESULT') ? "SQL_BUFFER_RESULT " : "";
 
 	my $query_cache = "";
-	$query_cache = 'SQL_CACHE ' if $query->getOption('OPTION_TO_QUERY_CACHE');
 	$query_cache = 'SQL_NO_CACHE ' if $query->getOption('SQL_NO_CACHE');
+	$query_cache = 'SQL_CACHE ' if $query->getOption('OPTION_TO_QUERY_CACHE');
 
 	my $found_rows = $query->getOption("OPTION_FOUND_ROWS") ? "SQL_CALC_FOUND_ROWS ": "";
 
@@ -414,19 +414,12 @@ sub _printSelect {
 	my $select_items = $query->getSelectItems();
 
 	if (defined $select_items) {
-		$select_items_str = join(', ', map {
-			$_->print().(
-			(
-				(defined $_->getAlias()) &&
-				($_->getAlias() ne '*')
-			) ? " AS `".$_->getAlias()."`" : ""
-			)
-		} @{$select_items} );
+		$select_items_str = join(', ', map { $_->print(1) } @{$select_items} );
 	}
 
 	return $describe.'SELECT '.$distinct.$high_priority.$straight_join.$small_result.$big_result.$buffer_result.
 		$query_cache.$found_rows.$select_items_str." ".
-		(defined $query->getTables() ? "FROM ".$query->_printFrom()."\n" : "").
+		(defined $query->getTables() ? "FROM ".$query->_printFrom() : "").
 		$query->_printWhere().
 		$query->_printGroupBy().$with_rollup.$with_cube.
 		$query->_printHaving().
@@ -518,7 +511,7 @@ sub _printUpdate {
 	my $ignore = ($query->getOption("IGNORE") ? "IGNORE " : "");
 
 	return "UPDATE ".$low_priority.$ignore.$query->_printFrom().
-		"\nSET ".join(', ', @updates).
+		" SET ".join(', ', @updates).
 		$query->_printWhere().
 		$query->_printOrderBy().
 		$query->_printLimit();
@@ -564,12 +557,12 @@ sub _printFrom {
 		}
 		
 		if (scalar(@tables) > 0) {
-			return join(', ', map { $_->print() } @tables);
+			return join(', ', map { $_->print(1) } @tables);
 		} else {
 			return "DUAL";
 		}
 	} else {
-		return $from->print();
+		return $from->print(1);
 	}
 }
 
@@ -577,7 +570,7 @@ sub _printWhere {
 	my $query = shift;
 	my $where = $query->getWhere();
 	if (defined $where) {
-		return " WHERE ".$where->print()."\n";
+		return " WHERE ".$where->print();
 	} else {
 		return "";
 	}
@@ -586,7 +579,7 @@ sub _printWhere {
 sub _printGroupBy {
 	my $query = shift;
 	if (defined $query->getGroupBy()) {
-		return " GROUP BY ".join(', ', map {$_->print()} @{$query->getGroupBy()})."\n";
+		return " GROUP BY ".join(', ', map {$_->print()} @{$query->getGroupBy()});
 	} else {
 		return "";
 	}
@@ -596,7 +589,7 @@ sub _printOrderBy {
 	my $query = shift;
 
 	if (defined $query->getOrderBy()) {
-		return " ORDER BY ".join(', ', map {$_->print()." ".$_->getDir()} @{$query->getOrderBy()})."\n";
+		return " ORDER BY ".join(', ', map {$_->print()." ".$_->getDir()} @{$query->getOrderBy()});
 	} else {
 		return "";
 	} 
@@ -606,7 +599,7 @@ sub _printHaving {
 	my $query = shift;
 	my $having = $query->getHaving();
 	if (defined $having) {
-		return " HAVING ".$having->print()."\n";
+		return " HAVING ".$having->print();
 	} else {
 		return "";
 	}
@@ -620,7 +613,7 @@ sub _printLimit {
 	my $offset = $limit->[1];
 	my $limit_str = " LIMIT ".$row_count->print();
 	$limit_str .= " OFFSET ".$offset->print() if defined $offset;
-	return $limit_str."\n";
+	return $limit_str;
 }
 1;
 
@@ -634,8 +627,13 @@ DBIx::MyParse::Query - Access the parse tree produced by DBIx::MyParse
 
         use DBIx::MyParse;
         my $parser = DBIx::MyParse->new();
-        my $query = $parser->parse("SELECT 1");
+        my $query = $parser->parse("INSERT INTO table VALUES (1)");
         print $query->getCommand();
+
+	$query->setCommand("SQLCOM_REPLACE");	# Replace INSERT with SELECT
+	$query->print();			# Print modified query as SQL
+
+	
 
 =head1 DESCRIPTION
 
@@ -684,6 +682,9 @@ Please see the section "Information Schema Queries" below for more information.
 Returns a reference to an array containing, as strings, the various options specified for the query, such as
 HIGH_PRIORITY, LOW_PRIORITY, DELAYED, IGNORE and the like. Some of the options are not returned with the names
 you expect, but rather using their internal MySQL names. Some options may be returned more than once.
+
+C<SQL_NO_CACHE> may be returned even if not explicitly present in the query, if the query contains uncacheable
+elements, eg C<NOW()>.
 
 =item C<getOption($option_name)>
 
@@ -902,10 +903,10 @@ also uses C<getSchemaSelect()>. A C<"DROP_IF_EXISTS"> or C<"CREATE_IF_NOT_EXISTS
 
 =head1 Dumping queries
 
-C<print()> can be used to walk the entire parse tree and convert it into SQL. C<SELECT>, C<INSERT>, C<REPLACE>,
-C<UPDATE> and C<DELETE> statements are supported. Please note that the returned string may be very different from the
-orginal query due to internal transformations that MySQL applies during parsing. Also, the C<print()>-ed query will have a
-lot of C<AS> clauses and will have an abundance of nested brackets.
+C<print()> can be used to convert the parse tree back into SQL. C<SELECT>, C<INSERT>, C<REPLACE>, C<UPDATE> and C<DELETE>
+statements are supported. Please note that the returned string may be very different from the orginal query due to internal
+transformations that MySQL applies during parsing. Also, the C<print()>-ed query may have extra C<AS> clauses and an
+abundance of nested brackets.
 
 =head1 Modifying the parse tree
 

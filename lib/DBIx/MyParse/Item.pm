@@ -3,7 +3,7 @@ package DBIx::MyParse::Item;
 use strict;
 use warnings;
 
-our $VERSION = '0.84';
+our $VERSION = '0.86';
 
 #
 # If you change those constants, do not forget to change
@@ -45,7 +45,6 @@ use constant MYPARSE_ITEM_JOIN_COND	=> 4;
 use constant MYPARSE_ITEM_JOIN_FIELDS	=> 5;
 
 # ====================
-
 
 use constant FUNC_PLACEMENT_FRONT	=> 1;
 use constant FUNC_PLACEMENT_MIDDLE	=> 2;
@@ -100,7 +99,7 @@ my %func_placement = (
 	'UDF_FUNC'		=> FUNC_PLACEMENT_FRONT
 );
 
-my @args = (
+my %args = (
 	item_type => MYPARSE_ITEM_ITEM_TYPE,
 	alias	  => MYPARSE_ITEM_ALIAS,
 
@@ -138,19 +137,111 @@ my @args = (
 1;
 
 sub new {
+	my $class = shift;
+	my $item = bless([], $class);
 
+	my $max_arg = (scalar(@_) / 2) - 1;
+	
+	foreach my $i (0..$max_arg) {
+		if (exists $args{$_[$i * 2]}) {
+			$item->[$args{$_[$i * 2]}] = $_[$i * 2 + 1];
+		} else {
+			warn("Unkown argument '$_[$i * 2]' to $class"."::new()");
+                }
+        }
+	return $item;
+}
+
+sub newNull {
+	return $_[0]->new( item_type => 'NULL_ITEM' );
+}
+
+sub newString {
+	return $_[0]->new( item_type => 'STRING_ITEM', value => $_[1] );
+}
+
+sub newVarbin {
+	return $_[0]->new( item_type => 'VARBIN_ITEM', value => $_[1] );
+}
+
+sub newInt {
+	return $_[0]->new( item_type => 'INT_ITEM', value => $_[1] );
+}
+
+sub newReal {
+	return $_[0]->new( item_type => 'REAL_ITEM', value => $_[1] );
+}
+
+sub newField {
+	return $_[0]->new( item_type => 'FIELD_ITEM', field_name => $_[1], table_name => $_[2], db_name => $_[3] );
+}
+
+sub newNot {
+	my $class = shift;
+	return $class->new( item_type => 'FUNC_ITEM', func_type => 'NOT_FUNC', func_name => 'not', arguments => \@_ );
+}
+
+sub newAnd {
+	my $class = shift;
+	return $class->new( item_type => 'FUNC_ITEM', func_type => 'COND_AND_FUNC', func_name => 'and', arguments => \@_ );
+}
+
+sub newOr {
+	my $class = shift;
+	return $class->new( item_type => 'FUNC_ITEM', func_type => 'COND_OR_FUNC', func_name => 'or', arguments => \@_ );
+}
+
+sub newPlus {
+	my $class = shift;
+	return $class->new( item_type => 'FUNC_ITEM', func_type => 'UNKNOWN_FUNC', func_name => '+', arguments => \@_ );
+}
+
+sub newMinus {
+	my $class = shift;
+	return $class->new( item_type => 'FUNC_ITEM', func_type => 'UNKNOWN_FUNC', func_name => '-', arguments => \@_ );
+}
+
+sub newEq {
+	my $class = shift;
+	return $class->new( item_type => 'FUNC_ITEM', func_type => 'EQ_FUNC', func_name => '=', arguments => \@_ );
+}
+
+sub newGt {
+	my $class = shift;
+	return $class->new( item_type => 'FUNC_ITEM', func_type => 'GT_FUNC', func_name => '>', arguments => \@_ );
+}
+sub newLt {
+	my $class = shift;
+	return $class->new( item_type => 'FUNC_ITEM', func_type => 'LT_FUNC', func_name => '<', arguments => \@_ );
+}
+
+sub newLike {
+	my $class = shift;
+	return $class->new( item_type => 'FUNC_ITEM', func_type => 'LIKE_FUNC', func_name => 'like', arguments => \@_ );
 }
 
 sub getItemType {
 	return $_[0]->[MYPARSE_ITEM_ITEM_TYPE];
 }
 
+sub setItemType {
+	$_[0]->[MYPARSE_ITEM_ITEM_TYPE] = $_[1];
+}
+
 sub getType {
 	return $_[0]->[MYPARSE_ITEM_ITEM_TYPE];
 }
 
+sub setType {
+	$_[0]->[MYPARSE_ITEM_ITEM_TYPE] = $_[1];
+}
+
 sub getAlias {
 	return $_[0]->[MYPARSE_ITEM_ALIAS];
+}
+
+sub setAlias {
+	$_[0]->[MYPARSE_ITEM_ALIAS] = $_[1];
 }
 
 sub getFuncType {
@@ -168,6 +259,10 @@ sub getFuncType {
 	}
 }
 
+sub setFuncType {
+	$_[0]->[MYPARSE_ITEM_FUNC_TYPE] = $_[1];
+}
+
 sub getFuncName {
 	my $item = shift;
 	my $item_type = $item->getItemType();
@@ -181,6 +276,11 @@ sub getFuncName {
 		warn("getFuncName() called, but getType() = $item_type");
 		return undef;
 	}
+}
+
+sub setFuncName {
+	$_[0]->[MYPARSE_ITEM_FUNC_NAME] = $_[1];
+
 }
 
 sub getArguments {
@@ -198,6 +298,26 @@ sub getArguments {
 		warn("getArguments() called, but getType() eq '$item_type'");
 		return undef;
 	}
+}
+
+sub hasArguments {
+	return (defined $_[0]->[MYPARSE_ITEM_ARGUMENTS]);
+}
+
+sub getFirstArg {
+	return $_[0]->getArguments()->[0];
+}
+
+sub getSecondArg {
+	return $_[0]->getArguments()->[1];	
+}
+
+sub getThirdArg {
+	return $_[0]->getArguments()->[2];	
+}
+
+sub setArguments {
+	$_[0]->[MYPARSE_ITEM_ARGUMENTS] = $_[1];
 }
 
 
@@ -221,6 +341,10 @@ sub getValue {
 	}
 }
 
+sub setValue {
+	$_[0]->[MYPARSE_ITEM_VALUE] = $_[1];
+}
+
 sub getCharset {
 	my $item = shift;
 	my $type = $item->getItemType();
@@ -237,6 +361,9 @@ sub getCharset {
 	}	
 }
 
+sub setCharset {
+	$_[0]->[MYPARSE_ITEM_CHARSET] = $_[1];
+}
 
 sub getFieldName {
 	my $item = shift;
@@ -254,6 +381,10 @@ sub getFieldName {
 	}
 }
 
+sub setFieldName {
+	return $_[0]->[MYPARSE_ITEM_FIELD_NAME] = $_[1];
+}
+
 sub getTableName {
 	my $item = shift;
 	my $item_type = $item->getType();
@@ -268,6 +399,10 @@ sub getTableName {
 		warn("getTableName() called, but getType() = $item_type.\n");
 		return undef;
 	}
+}
+
+sub setTableName {
+	$_[0]->[MYPARSE_ITEM_TABLE_NAME] = $_[1];
 }
 
 sub getDatabaseName {
@@ -288,12 +423,24 @@ sub getDatabaseName {
 	}
 }
 
+sub setDatabaseName {
+	$_[0]->[MYPARSE_ITEM_DB_NAME] = $_[1];
+}
+
 sub getDirection {	
 	return $_[0]->[MYPARSE_ITEM_DIR];
 }
 
+sub setDirection {
+	$_[0]->[MYPARSE_ITEM_DIR] = $_[1];
+}
+
 sub getDir {	
 	return $_[0]->[MYPARSE_ITEM_DIR];
+}
+
+sub setDir {
+	$_[0]->[MYPARSE_ITEM_DIR] = $_[1];	
 }
 
 sub getInterval {
@@ -303,6 +450,10 @@ sub getInterval {
 	} else {
 		warn("getInterval() called, but getType() ne 'INTERVAL_ITEM'");
 	}
+}
+
+sub setInterval {
+	$_[0]->[MYPARSE_ITEM_INTERVAL] = $_[1];
 }
 
 sub getVarName {
@@ -318,6 +469,10 @@ sub getVarName {
 	}
 }
 
+sub setVarName {
+	$_[0]->[MYPARSE_ITEM_VAR_NAME] = $_[1];
+}
+
 sub getVarType {
 	my $item = shift;
 	if (
@@ -331,6 +486,10 @@ sub getVarType {
 	}
 }
 
+sub setVarType {
+	$_[0]->[MYPARSE_ITEM_VAR_NAME] = $_[1];
+}
+
 sub getVarComponent {
 	my $item = shift;
 	if ($item->getType() eq 'SYSTEM_VAR_ITEM') {
@@ -339,6 +498,10 @@ sub getVarComponent {
 		warn("getVarComponent() called, but getType() ne 'SYSTEM_VAR_ITEM'");
 		return undef;
 	}
+}
+
+sub setVarComponent {
+	$_[0]->[MYPARSE_ITEM_VAR_COMPONENT] = $_[1];
 }
 
 sub getSubselectType {
@@ -350,6 +513,10 @@ sub getSubselectType {
 	}
 }
 
+sub setSubselectType {
+	$_[0]->[MYPARSE_ITEM_SUBSELECT_TYPE] = $_[1];
+}
+
 sub getSubselectExpr {
 	my $item = shift;
 	if ($item->getItemType() eq 'SUBSELECT_ITEM') {
@@ -357,6 +524,10 @@ sub getSubselectExpr {
 	} else {
 		warn("getSubselectExpr() called, but getItemType() ne 'SUBSELECT_ITEM'");
 	}
+}
+
+sub setSubselectExpr {
+	$_[0]->[MYPARSE_ITEM_SUBSELECT_EXPR] = $_[1];
 }
 
 sub getSubselectCond {
@@ -368,6 +539,10 @@ sub getSubselectCond {
 	}
 }
 
+sub setSubselectCond {
+	$_[0]->[MYPARSE_ITEM_SUBSELECT_COND] = $_[1];
+}
+
 sub getSubselectQuery {
 	my $item = shift;
 	if ($item->getItemType() eq 'SUBSELECT_ITEM') {
@@ -377,9 +552,17 @@ sub getSubselectQuery {
 	}
 }
 
+sub setSubselectQuery {
+	$_[0]->[MYPARSE_ITEM_SUBSELECT_QUERY] = $_[1];
+}
+
 
 sub getJoinCond {
 	return $_[0]->getJoinCondition();
+}
+
+sub setJoinCond {
+	$_[0]->[MYPARSE_ITEM_JOIN_COND] = $_[1];
 }
 
 sub getJoinCondition {
@@ -392,6 +575,10 @@ sub getJoinCondition {
 	}
 }
 
+sub setJoinCondition {
+	$_[0]->[MYPARSE_ITEM_JOIN_COND] = $_[1];
+}
+
 sub getJoinItems {
 	my $item = shift;
 	if ($item->getType() eq 'JOIN_ITEM') {
@@ -400,6 +587,11 @@ sub getJoinItems {
 		warn("getJoinItems() called, but getType() ne 'JOIN_ITEM'");
 		return undef;
 	}
+}
+
+sub setJoinItems {
+	$_[0]->[MYPARSE_ITEM_JOIN_ITEMS] = $_[1];
+
 }
 
 sub getJoinFields {
@@ -412,6 +604,10 @@ sub getJoinFields {
 	}
 }
 
+sub setJoinFields {
+	$_[0]->[MYPARSE_ITEM_JOIN_FIELDS] = $_[1];
+}
+
 sub getJoinType {
 	my $item = shift;
 	if ($item->getType() eq 'JOIN_ITEM') {
@@ -422,20 +618,36 @@ sub getJoinType {
 	}
 }
 
+sub setJoinType {
+	$_[0]->[MYPARSE_ITEM_JOIN_TYPE] = $_[1];
+}
+
 sub getUseIndex {
 	return $_[0]->[MYPARSE_ITEM_USE_INDEX];
+}
+
+sub setUseIndex {
+	$_[0]->[MYPARSE_ITEM_USE_INDEX] = $_[1];
 }
 
 sub getIgnoreIndex {
 	return $_[0]->[MYPARSE_ITEM_IGNORE_INDEX];
 }
 
+sub setIgnoreIndex {
+	$_[0]->[MYPARSE_ITEM_IGNORE_INDEX] = $_[1];
+}
+
 sub getForceIndex {
 	return $_[0]->[MYPARSE_ITEM_FORCE_INDEX];
 }
 
+sub setForceIndex {
+	$_[0]->[MYPARSE_ITEM_FORCE_INDEX] = $_[1];
+}
+
 sub print {
-	my $item = shift;
+	my ($item, $print_alias) = @_;
 
 	my $type = $item->getType();
 	
@@ -451,6 +663,8 @@ sub print {
 		$printed = $item->getValue();
 		$printed =~ s{\\}{\\\\}sgio;
 		$printed =~ s{'}{\\'}sgio;
+		$printed =~ s{"}{\\"}sgio;
+		$printed =~ s{\0}{\\0}sgio;
 		$printed = "'".$printed."'";
 		$printed = '_'.$item->getCharset().' '.$printed if defined $item->getCharset();
 	} elsif (
@@ -472,7 +686,7 @@ sub print {
 			}
 		}
 	} elsif ($type eq 'TABLE_ITEM') {
-		$printed = $item->_printTable(1);
+		return $item->_printTable($print_alias);
 	} elsif ($type eq 'DATABASE_ITEM') {
 		$printed = '`'.$item->getDatabaseName().'`';
 	} elsif ($type eq 'NULL_ITEM') {
@@ -527,7 +741,6 @@ sub print {
 
 		if (not defined $subs_type) {
 			$printed = "(".$subs_query_printed.")";
-			$printed .= " AS `".$item->getAlias().'`' if defined $item->getAlias();
 		} elsif	($subs_type eq 'SINGLEROW_SUBS') {
 			$printed = "(".$subs_query_printed.")";
 		} elsif ($subs_type eq 'IN_SUBS') {
@@ -553,6 +766,8 @@ sub print {
 		warn("item is $type, can not print");
 	}
 
+	$printed .= " AS `".$item->getAlias().'`' if (defined $print_alias) && (defined $item->getAlias());
+
 	return $printed;
 }
 
@@ -562,7 +777,7 @@ sub _printTable {
 	my $printed;
 	$printed = '`'.$item->getTableName().'`';
 	$printed = '`'.$item->getDatabaseName().'`.'.$printed if defined $item->getDatabaseName();
-	$printed .= " AS `".$item->getAlias().'`' if $print_alias && defined $item->getAlias();
+	$printed .= " AS `".$item->getAlias().'`' if $print_alias && defined $item->getAlias() && $item->getAlias() ne $item->getTableName();
 	$printed .= " USE INDEX (".join(', ', @{$item->getUseIndex()}).")" if defined $item->getUseIndex();
 	$printed .= " IGNORE INDEX (".join(', ', @{$item->getIgnoreIndex()}).")" if defined $item->getIgnoreIndex();
 	$printed .= " FORCE INDEX (".join(', ', @{$item->getForceIndex()}).")" if defined $item->getForceIndex();
@@ -791,13 +1006,40 @@ DBIx::MyParse::Item - Accessing the items from a C<DBIx::MyParse::Query> parse t
 	my $first_item = $item_list->[0];
 	print $first_item->getItemType();	# Prints "FIELD_ITEM"
 	print $first_item->getFieldName()	# Prints "field_name"
-	
+
+	$first_item->getFieldName('another_field');
+	my $new_item_sql = $first_item->print();# Reconstructs the item as SQL
+	my $new_query_sql = $query->print();	# Reconstructs entire query
+
+	my $one = DBIx::MyParser->newInt(1);
+	my $pi = DBIx::MyParse->newReal(3.14);
+	my $sum = DBIx::MyParse->newPlus($one, $pi);
+	my $sum_sql = $sum->print();
+
 
 =head1 DESCRIPTION
 
 MySQL uses a few dozen Item objects to store the various nodes possible in a
 parse tree. For the sake of simplicity, we only use a single object type
 in Perl to represent the same information.
+
+=head1 CREATING, MODIFYING AND PRINTING ITEM OBJECTS
+
+Item objects can be constructed from scratch using C<new()>. The arguments available to the constructor can be seen in
+the C<%args> hash in C<Item.pm>.
+
+For any C<get> function described below, a C<set()> function is available to modify the object.
+
+You can call <print()> on an C<DBIx::MyParse::Item> object to print an item. Passing C<1> as an argument to C<print()>
+will cause the C<getAlias()>, if any, to be appended to the output with an C<AS> SQL clause.
+
+The following convenience functions are available to create the simplest Item types: C<newNull()>, C<newInt($integer)>,
+C<newString($string)>, C<newReal($number)>, C<newVarbin($data)>. Field items can be created usind
+C<newField($field_name, $table, $database)>.
+
+Additions, substractions can be created using C<newPlus($arg1, $arg2)>, C<newMinus($arg1, $arg2)>.
+ORs, ANDs and NOTs can be created using C<newAnd($arg1, $arg2)>, C<newOr($arg1, $arg2)>, and C<newNot($arg)>.
+Equations and inequalities can be created using C<newEq($arg1, $arg2)>, C<newGt($arg1, $arg2)> and C<newLt($arg1, $arg2)>.
 
 =head1 METHODS
 
@@ -895,6 +1137,9 @@ will be lowercase regardless of the orginal case in the SQL string.
 
 Returns a reference to an array containing all the arguments to the function/operator. Each item from
 the array is an DBIx::MyParse::Item object, even if it is a simple string or a field name.
+
+C<hasArguments()>, C<getFirstArg()>, C<getSecondArg()> and C<getThirdArg()> are provided for convenience
+and to increase code readibility.
 
 =over
 
@@ -1036,17 +1281,16 @@ C<USE INDEX>, C<FORCE INDEX> or C<IGNORE INDEX> clause for the table in question
 =head1 JOINS
 
 C<getItemType()> will return C<'JOIN_ITEM'>. In C<DBIx::MyParse>, joins are a separate object, even if it is not
-really so in the C<MySQL> source. The reason for that is that this way all nested joins work and all ambiguities
-are resolved.
+really so in the C<MySQL> source. This way all JOINs are represented properly nested.
 
 =item C<getJoinItems()>
 
-Will return the two sides of the join. Each side may be either a C<'TABLE_ITEM'> or a <'SUBSELECT_ITEM'> so please
-be prepared to handle both.
+Will return the two sides of the join. Each side may be a C<'TABLE_ITEM'>, a <'SUBSELECT_ITEM'> or another C<'JOIN_ITEM'>
+so please be prepared to handle all.
 
 =item C<getJoinCond()>
 
-Returns a reference to a an C<Item> object containing the join condition
+Returns a reference to a an C<Item> object containing the C<ON> join condition
 
 =item C<getJoinFields()>
 
@@ -1097,4 +1341,3 @@ C<Item> object.
 Returns an C<DBIx::MyParse::Query> object that contains the parse tree of the actual subselect itself.
 
 =back
-

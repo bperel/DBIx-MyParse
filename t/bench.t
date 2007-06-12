@@ -119,5 +119,5 @@ ok($twins_query->getCommand() eq 'SQLCOM_SELECT', 'benchmark2');
 
 use Benchmark;
 
-Benchmark::timethese(10000, {  twins => sub {$parser->parse($twins_query) }});
+Benchmark::timethese(3000, {  twins => sub {$parser->parse($twins_query) }});
 

@@ -34,6 +34,7 @@ t/twins.t
 t/types.t
 t/update.t
 t/vars.t
+t/items.t
 
 parse_define.pl
 parse_enum.pl
@@ -42,3 +43,10 @@ lib/DBIx/MyParse.pm
 lib/DBIx/MyParse/Item.pm
 lib/DBIx/MyParse/Query.pm
 META.yml                                 Module meta-data (added by MakeMaker)
+
+examples/loop.pl
+examples/mygraph.pl
+examples/parse.pl
+examples/regexp.pl
+examples/sum.pl
+

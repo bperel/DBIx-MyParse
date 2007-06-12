@@ -16,24 +16,24 @@ BEGIN {
 my $parser = DBIx::MyParse->new();
 ok(ref($parser) eq 'DBIx::MyParse', 'new_parser');
 
-my $types_sql = "
+my $types_sql = '
 	SELECT
 		*,
 		database1.table1.field1,
 		ABS(2),
 		SUM(sum_field),
-		'string',
+		"string\'\"\0",
 		1234,
 		NULL,
 		?,
 		3.14,
-		3456 AND 'string2',
-		0x4D7953514C,
+		3456 AND "string2",
+		0x4D7953514C00,
 		1.1e+1,
 		INTERVAL(1,2,3,4),
 		TRUE,
 		(SELECT 1)
-";
+';
 
 my $types1 = $parser->parse($types_sql);
 my $types2 = $parser->parse($types1->print());
@@ -77,7 +77,7 @@ foreach my $types ($types1, $types2) {
 
 	my $string_item = $select_items->[4];
 	ok($string_item->getType() eq 'STRING_ITEM','string_item1');
-	ok($string_item->getValue() eq 'string','string_item2');
+	ok($string_item->getValue() eq "string'\"\0",'string_item2');
 	
 	my $int_item = $select_items->[5];
 	ok($int_item->getType() eq 'INT_ITEM','int_item1');
@@ -112,7 +112,7 @@ foreach my $types ($types1, $types2) {
 
 	my $varbin_item = $select_items->[10];
 	ok($varbin_item->getType() eq 'VARBIN_ITEM','varbin_item1');
-	ok($varbin_item->getValue() eq 'MySQL','varbin_item2');	
+	ok($varbin_item->getValue() eq "MySQL\0",'varbin_item2');	
 
 	my $real_item = $select_items->[11];
 	ok($real_item->getType() eq 'REAL_ITEM','real_item1');

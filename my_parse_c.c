@@ -31,6 +31,10 @@ void * my_parse_create_array () {
 	return newAV();
 }
 
+void * my_parse_create_string (const char * string, STRLEN length) {
+	return (void *) newSVpv(string, length);
+}
+
 void my_parse_free_array (perl_object * array_perl) {
 	SvREFCNT_dec((SV *) array_perl);
 }
@@ -119,6 +123,8 @@ void * my_parse_set_array (
 				item = newRV_noinc((SV*) item_ref);
 			}
 			break;
+		case MYPARSE_ARRAY_SV:
+			item = (SV *) item_ref;
 		default:
 			assert(item_type);
 	}

@@ -74,7 +74,6 @@ Unable to initialize libmysqld. at /usr/local/lib/perl5/site_perl/5.8.8/i686-lin
 
 Please make sure you have the /usr/local/share/mysql/ directory populated, see step A.3. above.
 
-
 COPYRIGHT AND LICENCE
 
 Copyright (C) 2007 by Philip Stoev <philip@stoev.org>
@@ -82,6 +81,3 @@ Copyright (C) 2007 by Philip Stoev <philip@stoev.org>
 This library is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public Licence. Please check the 
 files GPL and LICENCE for further iformation.
-
-
-

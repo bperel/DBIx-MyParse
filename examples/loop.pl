@@ -1,32 +1,15 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl twins.t'
-
-#########################
-
-# change 'tests => 1' to 'tests => last_test_to_print';
-
-use Test::More tests => 4;
-BEGIN {
-	use_ok('DBIx::MyParse');
-	use_ok('DBIx::MyParse::Query');
-	use_ok('DBIx::MyParse::Item')
-};
-
-#########################
-
-# Insert your test code below, the Test::More module is use()ed here so read
-# its man page ( perldoc Test::More ) for help writing this test script.
-
-my $parser = DBIx::MyParse->new();
-$parser->setDatabase('test');
-ok(ref($parser) eq 'DBIx::MyParse', 'new_parser');
-
 #
-# This is the twins query from
-# http://dev.mysql.com/doc/mysql/en/twin-pool.html
+# The purpose of this script is to run a complex query in a tight loop.
+# This is used for determining initial memory usage and test for memory leaks
 #
 
-my $twins = $parser->parse("
+use DBIx::MyParse;
+my $parser = DBIx::MyParse->new(
+	datadir => "/tmp"
+);
+$parser->setDatabase("database");
+
+my $sql = qq{
 SELECT
     CONCAT(p1.id, p1.tvab) + 0 AS tvid,
     CONCAT(p1.christian_name, ' ', p1.surname) AS Name,
@@ -112,4 +95,8 @@ WHERE
     OR h.status = 'Died' OR h.status = 'Other')
 ORDER BY
     tvid;
-");
+};
+
+while(1) {
+	$parser->parse($sql);
+}

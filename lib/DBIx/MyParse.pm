@@ -6,7 +6,7 @@ use warnings;
 use DBIx::MyParse::Query;
 use DBIx::MyParse::Item;
 
-our $VERSION = '0.84';
+our $VERSION = '0.86';
 
 use constant MYPARSE_DB		=> 0;
 use constant MYPARSE_OPTIONS	=> 1;
@@ -52,8 +52,12 @@ sub new {
 
 	if (not defined $parser->[MYPARSE_OPTIONS]) {
 		$parser->[MYPARSE_OPTIONS] = [
-			"--skip-bdb", "--skip-grant-tables", "--skip-innodb",
-			"--skip-isam", "--skip-ndbcluster", "--skip-networking"
+			"--skip-bdb", "--skip-innodb", "--skip-isam",
+			"--skip-ndbcluster", "--skip-merge",
+			"--skip-grant-tables", "--skip-networking",
+			"--key_buffer_size=1K", "--key_buffer=1K",
+			"--sort_buffer_size=1K", "--myisam_sort_buffer_size=1K",
+			"--read_only"
 		];
 	} elsif (ref($parser->[MYPARSE_OPTIONS]) ne 'ARRAY') {
 		warn("argument 'options' to DBIx::MyParse->new() must be a reference to an array, ignoring");
@@ -138,17 +142,21 @@ compile the MySQL source.
 
 The constructor allows one to specify what C<options> to be passed to C<libmysqld>. Please make sure your options are
 all syntactically correct. An incorrect option can cause the constructor to C<exit()> in a silent and untrappable way.
-If no C<options> are specified, the following defaults are used:
+If no C<options> are specified, the following defaults are used, which provide low memory usage:
 
-	--skip-grant-tables --skip-networking
-	--skip-bdb --skip-innodb
-	--skip-isam --skip-ndbcluster
+	--skip-grant-tables --skip-networking --read_only
+	--key_buffer_size=1K --key_buffer=1K --sort_buffer_size=1K --myisam_sort_buffer_size=1K
+	plus --skip for all database engines except MyISAM which can not be --skip-ed
+
+If you specify some C<options> however do not skip loading the database engines, e.g. Innodb, data files may be created
+and a considerable ammount of memory may be occupied. You can also put your configuration options in C</etc/my.cnf>,
+however it is recommended that you use a separate group within that file, rather than the C<[mysqld]> group.
 
 It is also recommended that you specify a C<database> in the constructor or call C<setDatabase()> as soon as possible,
 because some SQL statements will fail to parse without a default database. At the same time, please note that the default
 database name may end up in your parse tree as if it was present in the SQL query itself.
 
-It is also reccomended that you also specify a C<datadir> because some SQL statements require an existing C<datadir> to parse
+It is also recommended that you also specify a C<datadir> because some SQL statements require an existing C<datadir> to parse
 correctly. Furthermore, within the C<datadir>, you should have a subdirectory for each database you intend to use. There
 is no need for the directory to contain any C<.FRM> files. If no C<datadir> is specified, C</tmp> is used. Do NOT specify a
 datadir that contains useful information -- as this module grows, unforseen interactions can occur.
