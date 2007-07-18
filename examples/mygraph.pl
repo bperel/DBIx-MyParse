@@ -29,7 +29,7 @@ my $req = Apache2::Request->new($r);
 $r->no_cache(1);
 
 my $parser = DBIx::MyParse->new( datadir => "/tmp" );
-$parser->setDatabase("database");
+$parser->setDatabase("test");
 
 my $query = $parser->parse($req->param("sql"));
 

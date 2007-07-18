@@ -663,11 +663,16 @@ perl_object * my_parse_outer(perl_object * parser, char * db, char * query) {
 			
 	alloc_query(thd, query, strlen(query) + 1);
 
-	mysql_init_query(thd, (uchar *) thd->query, thd->query_length);
+	lex_start(thd);
+	mysql_reset_thd_for_next_command(thd);
+
+	Lex_input_stream lip(thd, query, strlen(query));
+	thd->m_lip= &lip;
+	lip.stmt_prepare_mode = 1;
 	
 	LEX * lex = thd->lex;
 
-	mysql_change_db( thd, db, 1);
+	thd->set_db(db, strlen(db));
 	lex->select_lex.db = db;
 
 	lex->wild = NULL;
@@ -677,7 +682,7 @@ perl_object * my_parse_outer(perl_object * parser, char * db, char * query) {
 	lex->select_lex.group_list.first = NULL;
 /*	lex->select_lex.explicit_limit = NULL; */
 
-	lex->stmt_prepare_mode = TRUE;
+/*	lex->stmt_prepare_mode = TRUE;	*/	/* Gone in 5.0.45 */
 	thd->command = COM_STMT_PREPARE;
 	int error = MYSQLparse((void *)thd) || thd->is_fatal_error || thd->net.report_error;
 

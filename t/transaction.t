@@ -69,7 +69,6 @@ my $lock_query = $parser->parse("
 	table4 LOW_PRIORITY WRITE
 ");
 
-
 ok(ref($lock_query) eq 'DBIx::MyParse::Query','lock1');
 ok($lock_query->getCommand() eq 'SQLCOM_LOCK_TABLES', 'lock2');
 my $lock_tables = $lock_query->getTables();

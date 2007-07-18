@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.86';
+our $VERSION = '0.88';
 
 #
 # If you change those constants, do not forget to change
@@ -276,6 +276,20 @@ sub getWild {
 
 sub setWild {
 	$_[0]->[MYPARSE_WILD] = $_[1];
+}
+
+sub isPrintable {
+	my $query = shift;
+	if (
+		($query->getCommand() eq 'SQLCOM_SELECT') &&
+		($query->getOrigCommand() ne 'SQLCOM_END')
+	) {
+		return 0;	# We can not print SHOW TABLES and the like for the time being
+	} elsif ($query->getOrigCommand() =~ m{SELECT|INSERT|UPDATE|DELETE|REPLACE|DROP_DB|DROP_TABLE|CREATE_DB|RENAME_TABLE|TRUNCATE|BEGIN|COMMIT|ROLLBACK|SAVEPOINT}io) {
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 sub print {
@@ -807,7 +821,7 @@ Will return a reference to an array contwaining the table(s) we are deleting rec
 =item C<getTables()>
 
 For a multiple-table delete, C<getTables()> will return the tables listed in the FROM clause,
-which are used to provide referential integrity. This may include C<JOIN_ITEM>s.
+which are used to provide referential integrity. Those may include C<JOIN_ITEM>s.
 
 =back
 
@@ -870,7 +884,6 @@ the databases.
 
 The following options may be present: C<"DROP_IF_EXISTS">, C<"DROP_TEMPORARY">, C<"DROP_RESTRICT"> and C<"DROP_CASCADE">.
 
-
 =head1 Information Schema Queries
 
 The following queries
@@ -881,7 +894,7 @@ The following queries
 are rewritten internally by the MySQL parser into SELECT queries. To determine the original query, use C<getOrigCommand()>.
 
 To determine the original table or database the query pertains to , use C<getSchemaSelect()> which
-returns either a C<"DATABASE ITEM">, C<"TABLE_ITEM"> or a L<"FIELD_ITEM"|DBIx::MyParse::Item> object.
+returns either a L<"DATABASE ITEM"|DBIx::MyParse::Item>, L<"TABLE_ITEM"|DBIx::MyParse::Item> or a L<"FIELD_ITEM"|DBIx::MyParse::Item> object.
 
 To determine the contents of any C< LIKE > operator, use C<getWild()> which will return a string.
 
@@ -907,6 +920,8 @@ C<print()> can be used to convert the parse tree back into SQL. C<SELECT>, C<INS
 statements are supported. Please note that the returned string may be very different from the orginal query due to internal
 transformations that MySQL applies during parsing. Also, the C<print()>-ed query may have extra C<AS> clauses and an
 abundance of nested brackets.
+
+C<isPrintable()> can be used to test whether calling C<print()> would be meaningful.
 
 =head1 Modifying the parse tree
 

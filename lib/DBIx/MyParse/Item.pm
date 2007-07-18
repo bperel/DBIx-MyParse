@@ -3,7 +3,7 @@ package DBIx::MyParse::Item;
 use strict;
 use warnings;
 
-our $VERSION = '0.86';
+our $VERSION = '0.88';
 
 #
 # If you change those constants, do not forget to change
@@ -1030,7 +1030,7 @@ the C<%args> hash in C<Item.pm>.
 
 For any C<get> function described below, a C<set()> function is available to modify the object.
 
-You can call <print()> on an C<DBIx::MyParse::Item> object to print an item. Passing C<1> as an argument to C<print()>
+You can call C<print()> on an C<DBIx::MyParse::Item> object to print an item. Passing C<1> as an argument to C<print()>
 will cause the C<getAlias()>, if any, to be appended to the output with an C<AS> SQL clause.
 
 The following convenience functions are available to create the simplest Item types: C<newNull()>, C<newInt($integer)>,
@@ -1125,12 +1125,13 @@ in enum Sumfunctype in F<sql/item_sum.h>:
 		UDF_SUM_FUNC,GROUP_CONCAT_FUNC
 	};
 
-For MySQL, all functions not specifically listed above are C<UNKNOWN_FUNC> and you must call C<getFuncName()>.
+For MySQL, all functions not specifically listed above are C<UNKNOWN_FUNC> and you must call C<getFuncName()>. This may
+include both general-purpose functions and user-defined ones.
 
 =item C<getFuncName()>
 
-Returns the name of the function called, such as "concat_ws", "md5", etc. If $item is not a function,
-but an operator, the symbol of the operator is returned, such as "+" or "||". The name of the function
+Returns the name of the function called, such as C<"concat_ws">, C<"md5">, etc. If the C<Item> is not a function,
+but an operator, the symbol of the operator is returned, such as C<'+'> or C<'||'>. The name of the function
 will be lowercase regardless of the orginal case in the SQL string.
 
 =item C<getArguments()>
@@ -1175,7 +1176,7 @@ round interval and C<'STRING_ITEM'> for partial intervals, e.g. C<'5.55' MINUTE>
 The last argument will be of type C<'INTERVAL_ITEM'> and you can call C<getInterval()> on it to determine the actual
 interval being used. A string will be returned, as listed on the table in section 12.5 of the MySQL manual, except that
 all strings are returned prefixed with C<'INTERVAL_'> e.g. a day interval will be returned at C<'INTERVAL_DAY'> and not
-just C<DAY>.
+just C<'DAY'>.
 
 =item C<ADDTIME()> and C<SUBTIME()>
 
@@ -1296,7 +1297,7 @@ Returns a reference to a an C<Item> object containing the C<ON> join condition
 
 Returns a reference to C<'FIELD_ITEM'> C<Item>s for each fields that appears in the C<USING> clause.
 
-=item C<$item->getJoinType()>
+=item C<getJoinType()>
 
 Returns, as string, the type of join that will be used. Possible values are:
 
@@ -1333,11 +1334,11 @@ checked against the data returned by the subquery.
 =item C<getSubselectCond()>
 
 For subselect types C<'ANY_SUBS'> and C<'ALL_SUBS'> will return the function used to match the expression
-against the data returned by the subquery, e.g. C<<'>'>>. Please note that a string value is returned, not a full
-C<Item> object.
+against the data returned by the subquery, e.g. C<< '>' >>. A single-character string value is returned,
+not a full C<Item> object of type C<"COND_ITEM"> .
 
 =item C<getSubselectQuery()>
 
-Returns an C<DBIx::MyParse::Query> object that contains the parse tree of the actual subselect itself.
+Returns an L<DBIx::MyParse::Query> object that contains the parse tree of the actual subselect itself.
 
 =back

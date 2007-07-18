@@ -31,7 +31,7 @@ ok(ref($parser) eq 'DBIx::MyParse', 'new_parser');
 
 my $single_delete = $parser->parse("
 	DELETE LOW_PRIORITY QUICK IGNORE
-	FROM database_name.table_name
+	FROM test.table_name
 	WHERE 1
 	ORDER BY column_name
 	LIMIT 1234
@@ -56,7 +56,7 @@ my $table = $tables->[0];
 
 ok(ref($table) eq 'DBIx::MyParse::Item', 'single_delete8');
 ok($table->getType() eq 'TABLE_ITEM', 'single_delete9');
-ok($table->getDatabaseName() eq 'database_name', 'single_delete10');
+ok($table->getDatabaseName() eq 'test', 'single_delete10');
 ok($table->getTableName() eq 'table_name', 'single_delete11');
 
 my $where = $single_delete->getWhere();
@@ -86,7 +86,7 @@ my $multiple_delete = $parser->parse("
 	DELETE table1, table2.*
 	FROM table1, table2, table3
 	WHERE table1.id = table2.id
-	AND table2.id = table3.id;
+	AND table2.id = table3.id
 ");
 
 ok(ref($multiple_delete) eq 'DBIx::MyParse::Query', 'multiple_delete1');

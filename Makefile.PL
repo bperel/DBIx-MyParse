@@ -5,7 +5,7 @@ use strict;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-my $default_mysql_path ='/usr/src/mysql-5.0.37';
+my $default_mysql_path ='/usr/src/mysql-5.0.45';
 
 print "Please provide the path to your MySQL source tree [$default_mysql_path]: ";
 my $mysql_path = <STDIN>;

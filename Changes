@@ -1,3 +1,11 @@
+Version 0.88
+	* Fixed to work with MySQL 5.0.45
+
+Version 0.87
+
+* Added isPrintable();
+* replaced call to mysql_change_db() which changed its arguments with a call to thd->set_db();
+
 Version 0.86
 
 * Updated mysqld options to reduce cache sizes, memory footprint drops to 13 megabytes;

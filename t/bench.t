@@ -110,12 +110,14 @@ WHERE
     AND NOT (h.status = 'Refused' OR h.status = 'Aborted'
     OR h.status = 'Died' OR h.status = 'Other')
 ORDER BY
-    tvid;
-
+    tvid
 ");
 
 ok(ref($twins_query) eq 'DBIx::MyParse::Query', 'benchmark');
 ok($twins_query->getCommand() eq 'SQLCOM_SELECT', 'benchmark2');
+
+use Data::Dumper;
+print Dumper $twins_query;
 
 use Benchmark;
 

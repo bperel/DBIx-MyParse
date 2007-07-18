@@ -22,7 +22,7 @@ $parser->setDatabase('test');
 
 ok(ref($parser) eq 'DBIx::MyParse', 'new_parser');
 
-my $params_query = $parser->parse('INSERT INTO table1 VALUES (?) ');
+my $params_query = $parser->parse('INSERT INTO table1 VALUES (?)');
 
 ok(ref($params_query) eq 'DBIx::MyParse::Query', 'params_query1');
 
@@ -35,4 +35,3 @@ ok(ref($insert_row) eq 'ARRAY', 'params_query3');
 my $insert_value = $insert_row->[0];
 ok(ref($insert_value) eq 'DBIx::MyParse::Item','params_query4');
 ok($insert_value->getType() eq 'PARAM_ITEM', 'params_query5');
-
