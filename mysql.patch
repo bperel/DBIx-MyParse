@@ -175,3 +175,19 @@ diff -u -r mysql-5.0.33/sql/item_timefunc.h mysql-5.0.33-myparse/sql/item_timefu
    Item_func_timestamp_diff(Item *a,Item *b,interval_type type_arg)
      :Item_int_func(a,b), int_type(type_arg) {}
    const char *func_name() const { return "timestampdiff"; }
+diff -u -r mysql-5.0.33/sql/item_timefunc.h mysql-5.0.33-myparse/sql/item_timefunc.h
+--- mysql-5.0.33/cmd-line-utils/libedit/np/unvis.c	2007-01-09 07:51:17.000000000 -0500
++++ mysql-5.0.33-myparse/cmd-line-utils/libedit/np/unvis.c	2012-12-12 23:36:30.000000000 -0500
+@@ -56,10 +56,10 @@ __weak_alias(strunvis,_strunvis)
+ __weak_alias(unvis,_unvis)
+ #endif
+ 
+-#ifdef __warn_references
++/*#ifdef __warn_references
+ __warn_references(unvis,
+     "warning: reference to compatibility unvis(); include <vis.h> for correct reference")
+-#endif
++#endif*/
+ 
+ #if !HAVE_VIS_H
+ /*
