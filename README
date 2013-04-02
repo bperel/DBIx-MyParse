@@ -1,4 +1,4 @@
-DBIx::MyParse version 0.20
+DBIx::MyParse version 0.88
 ====================
 
 This module provides access to the MySQL SQL parser.
@@ -10,7 +10,7 @@ the module from scratch please do the following:
 
 A. Prepare your MySQL source
 
-1. Download the latest 5.0 MySQL source from http://dev.mysql.com/downloads/mysql/5.0.html and unzip it
+1. Download the 5.0.45 MySQL source from http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.45.tar.gz and un-TGZ it
 
 2. Apply the patch
 
