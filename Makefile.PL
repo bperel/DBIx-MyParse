@@ -5,19 +5,16 @@ use strict;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-my $default_mysql_path ='/usr/src/mysql-5.0.45';
+if ($ARGV[0] eq '') {
+	print "Usage: perl Makefile.PL \"<MySQL source path>\"\n";
+	exit 1;
+}
 
-print "Please provide the path to your MySQL source tree [$default_mysql_path]: ";
-my $mysql_path = <STDIN>;
-$mysql_path =~ s{[\r\n]}{};
-
-$mysql_path = $default_mysql_path if ($mysql_path eq '');
-
-$mysql_path = $mysql_path.'/';
+my $mysql_path = $ARGV[0].'/';
 my $check_file = $mysql_path."libmysqld/libmysqld.a";
 if (! -e $check_file) {
 	print "File $check_file does not exist: $!. Please try again.\n";
-	exit;
+	exit 1;
 }
 
 my $makefile_path = $mysql_path.'/libmysql/Makefile';
@@ -26,7 +23,7 @@ my $libmysqld_path = $mysql_path.'/libmysqld/libmysqld.a';
 
 if (! -e $libmysqld_path) {
 	print "$libmysqld_path does not exist. Did you run ./configure --with-embedded-server && make ? \n";
-	exit;
+	exit 1;
 }
 
 #
