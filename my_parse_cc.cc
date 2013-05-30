@@ -74,7 +74,7 @@ perl_object * my_parse_list_strings(List<String> list) {
 	return array_perl;	
 }
 
-perl_object * my_parse_table(THD * thd, st_select_lex * select_lex, perl_object * query_perl, perl_object * join_perl, st_table_list * table) {
+perl_object * my_parse_table(THD * thd, st_select_lex * select_lex, perl_object * query_perl, perl_object * join_perl, TABLE_LIST * table) {
 
 	perl_object * table_perl = my_parse_create_array();
 
