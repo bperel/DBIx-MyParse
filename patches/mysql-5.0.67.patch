@@ -18,7 +18,7 @@ diff -u -r mysql-5.0.67/sql/item_cmpfunc.h mysql-5.0.67-myparse/sql/item_cmpfunc
 -    :Item_func(), first_expr_num(-1), else_expr_num(-1),
 -    cached_result_type(INT_RESULT)
 +    :Item_func(), cached_result_type(INT_RESULT),
-+	first_expr_num(-1), else_expr_num(-1),
++	first_expr_num(-1), else_expr_num(-1)
 +    
    {
      ncases= list.elements;
