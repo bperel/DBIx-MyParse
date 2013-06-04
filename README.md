@@ -1,44 +1,58 @@
-DBIx::MyParse version 0.88
-====================
+## DBIx::MyParse version 0.88
 
 This module provides access to the MySQL SQL parser.
 
-INSTALLATION
+### INSTALLATION
 
-A binary RPM built using cpan2rpm on a Fedora Core 6 is available from http://www.sf.net/projects/myparse. To compile
+A binary RPM built using cpan2rpm on a Fedora Core 6 is available for MySQL 5.0.45 and less from http://www.sf.net/projects/myparse. To compile
 the module from scratch please do the following:
 
-A. Prepare your MySQL source
+* Prepare your MySQL source
 
-1. Download the 5.0.45 MySQL source from http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.45.tar.gz and un-TGZ it
+ * 1. Download the MySQL source. The following versions are currently supported :
+   	* [5.0.45](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.45.tar.gz)
+ 
+   	* [5.0.51a](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.51a.tar.gz)
+ 
+   	* [5.0.67](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.67.tar.gz)
+	
+and un-TGZ it.
 
-2. Apply the patch
+ * Apply the patch, using the MySQL version number as patch file name, e.g. for MySQL 5.0.45 :
 
-	# cd /usr/src/your-mysql-source
-	# cat /usr/src/DBIx-MyParse/mysql.patch | patch -p1
+```
+cd /usr/src/your-mysql-source
+cat /usr/src/DBIx-MyParse/patches/mysql-5.0.45.patch | patch -p1
+```
 
-3. Configure the MySQL source
+ * Configure the MySQL source
 
-	# cd /usr/src/your-mysql-source
-	# ./configure --with-embedded-server
-	# make
+```
+cd /usr/src/your-mysql-source
+./configure --with-embedded-server
+make
+```
 
 You do NOT need to do "make install". This way, any other MySQL installations that you have will
 not be overwritten. You only need to have a populated /usr/local/share/mysql/ directory (containing errmsg.txt).
 
 If you do not have it, do:
 
-	# cd /usr/src/your-mysql-source
-	# cd sql/share
-	# make instal
+```
+cd /usr/src/your-mysql-source
+cd sql/share
+make install
+```
 
 B. Install DBIx::MyParse
 
-	# perl Makefile.PL
-	# make install
-	# mkdir /tmp/myparse
-	# mkdir /tmp/myparse/test
-	# make test
+```
+perl Makefile.PL /usr/src/your-mysql-source
+make install
+mkdir /tmp/myparse
+mkdir /tmp/myparse/test
+make test
+```
 
 You will need to create /tmp/myparse and /tmp/myparse/test to run the test suite.
 
@@ -52,7 +66,9 @@ No such file or directory at /usr/lib/perl5/5.8.6/i386-linux-thread-multi/DynaLo
 
 , please try:
 
+```
 ln -s /usr/local/lib/mysql/libz.so.0.0.0 /usr/lib/libz.so.0
+```
 
 if there is no /usr/local/lib/mysql/libz.so.0.0.0, to a "make install" in the zlib directory
 of the mysql source.
@@ -63,8 +79,10 @@ If you get:
 
 please try:
 
-	# cd your-mysql-source/sql/share
-	# make install
+```
+cd your-mysql-source/sql/share
+make install
+```
 
 or do a complete MySQL install to get the same result
 
