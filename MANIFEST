@@ -5,12 +5,10 @@ LICENCE
 GPL
 MyParse.xs
 ppport.h
-README
+README.md
 my_parse_c.c
 my_parse_cc.cc
 my_parse.h
-
-mysql.patch
 
 t/aggregate.t
 t/bench.t
