@@ -1,0 +1,224 @@
+diff U3w sql/item_cmpfunc.h sql/item_cmpfunc.h
+--- sql/item_cmpfunc.h	Fri Jan 16 04:25:12 1970
++++ sql/item_cmpfunc.h	Fri Jan 16 04:25:12 1970
+@@ -719,7 +719,6 @@
+ 
+ class Item_func_case :public Item_func
+ {
+-  int first_expr_num, else_expr_num;
+   enum Item_result cached_result_type;
+   String tmp_value;
+   uint ncases;
+@@ -727,9 +726,11 @@
+   DTCollation cmp_collation;
+   enum_field_types cached_field_type;
+ public:
++  int first_expr_num, else_expr_num;
+   Item_func_case(List<Item> &list, Item *first_expr_arg, Item *else_expr_arg)
+-    :Item_func(), first_expr_num(-1), else_expr_num(-1),
+-    cached_result_type(INT_RESULT)
++    :Item_func(), cached_result_type(INT_RESULT),
++	first_expr_num(-1), else_expr_num(-1)
++    
+   {
+     ncases= list.elements;
+     if (first_expr_arg)
+@@ -1289,11 +1290,9 @@
+   bool turboBM_matches(const char* text, int text_len) const;
+   enum { alphabet_size = 256 };
+ 
++public:
+   Item *escape_item;
+-  
+   bool escape_used_in_parsing;
+-
+-public:
+   int escape;
+ 
+   Item_func_like(Item *a,Item *b, Item *escape_arg, bool escape_used)
+diff U3w sql/item_func.h sql/item_func.h
+--- sql/item_func.h	Fri Jan 16 04:25:12 1970
++++ sql/item_func.h	Fri Jan 16 04:25:12 1970
+@@ -969,8 +969,8 @@
+ 
+ class Item_func_benchmark :public Item_int_func
+ {
+-  ulong loop_count;
+ public:
++  ulong loop_count;
+   Item_func_benchmark(ulong loop_count_arg,Item *expr)
+     :Item_int_func(expr), loop_count(loop_count_arg)
+   {}
+@@ -1397,10 +1397,10 @@
+ 
+ class Item_func_get_system_var :public Item_func
+ {
++public:
+   sys_var *var;
+   enum_var_type var_type;
+   LEX_STRING component;
+-public:
+   Item_func_get_system_var(sys_var *var_arg, enum_var_type var_type_arg,
+                            LEX_STRING *component_arg, const char *name_arg,
+                            size_t name_len_arg);
+diff U3w sql/item_row.h sql/item_row.h
+--- sql/item_row.h	Fri Jan 16 04:25:12 1970
++++ sql/item_row.h	Fri Jan 16 04:25:12 1970
+@@ -15,20 +15,21 @@
+ 
+ class Item_row: public Item
+ {
+-  Item **items;
+-  table_map used_tables_cache;
+-  uint arg_count;
+   bool const_item_cache;
+   bool with_null;
+ public:
++  Item **items;
++  uint arg_count;
++  table_map used_tables_cache;
++  
+   Item_row(List<Item> &);
+   Item_row(Item_row *item):
+     Item(),
++    const_item_cache(item->const_item_cache),
++    with_null(0),
+     items(item->items),
+-    used_tables_cache(item->used_tables_cache),
+     arg_count(item->arg_count),
+-    const_item_cache(item->const_item_cache),
+-    with_null(0)
++    used_tables_cache(item->used_tables_cache)
+   {}
+ 
+   enum Type type() const { return ROW_ITEM; };
+diff U3w sql/item_strfunc.h sql/item_strfunc.h
+--- sql/item_strfunc.h	Fri Jan 16 04:25:12 1970
++++ sql/item_strfunc.h	Fri Jan 16 04:25:12 1970
+@@ -356,9 +356,9 @@
+ class Item_func_encode :public Item_str_func
+ {
+  protected:
+-  SQL_CRYPT sql_crypt;
+   String seed;
+ public:
++  SQL_CRYPT sql_crypt;
+   Item_func_encode(Item *a, char *seed_arg):
+     Item_str_func(a), sql_crypt(seed_arg)
+     {
+diff U3w sql/item_subselect.h sql/item_subselect.h
+--- sql/item_subselect.h	Fri Jan 16 04:25:12 1970
++++ sql/item_subselect.h	Fri Jan 16 04:25:12 1970
+@@ -36,10 +36,6 @@
+   THD *thd;
+   /* substitution instead of subselect in case of optimization */
+   Item *substitution;
+-  /* unit of subquery */
+-  st_select_lex_unit *unit;
+-  /* engine that perform execution of subselect (single select or union) */
+-  subselect_engine *engine;
+   /* old engine if engine was changed */
+   subselect_engine *old_engine;
+   /* cache of used external tables */
+@@ -54,6 +50,13 @@
+   bool const_item_cache;
+ 
+ public:
++
++  /* unit of subquery */
++  st_select_lex_unit *unit;
++  
++  /* engine that perform execution of subselect (single select or union) */
++  subselect_engine *engine;
++  
+   /* changed engine indicator */
+   bool engine_changed;
+   /* subquery is transformed */
+@@ -258,7 +261,6 @@
+ class Item_in_subselect :public Item_exists_subselect
+ {
+ protected:
+-  Item *left_expr;
+   /*
+     expr & optimizer used in subselect rewriting to store Item for
+     all JOIN in UNION
+@@ -269,6 +271,7 @@
+   bool abort_on_null;
+   bool transformed;
+ public:
++  Item *left_expr;
+   /* Used to trigger on/off conditions that were pushed down to subselect */
+   bool *pushed_cond_guards;
+ 
+diff U3w sql/item_sum.h sql/item_sum.h
+--- sql/item_sum.h	Fri Jan 16 04:25:12 1970
++++ sql/item_sum.h	Fri Jan 16 04:25:12 1970
+@@ -246,8 +246,6 @@
+   List<Item_field> outer_fields;
+ 
+ protected:  
+-  uint arg_count;
+-  Item **args, *tmp_args[2];
+   /* 
+     Copy of the arguments list to hold the original set of arguments.
+     Used in EXPLAIN EXTENDED instead of the current argument list because 
+@@ -258,6 +256,8 @@
+   bool forced_const;
+ 
+ public:  
++  uint arg_count;
++  Item **args, *tmp_args[2];
+ 
+   void mark_as_sum_func();
+   Item_sum() :quick_group(1), arg_count(0), forced_const(FALSE)
+diff U3w sql/item_timefunc.h sql/item_timefunc.h
+--- sql/item_timefunc.h	Fri Jan 16 04:25:12 1970
++++ sql/item_timefunc.h	Fri Jan 16 04:25:12 1970
+@@ -3,6 +3,7 @@
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; version 2 of the License.
++   the Free Software Foundation; version 2 of the License.
+ 
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+@@ -746,11 +747,11 @@
+ 
+ class Item_char_typecast :public Item_typecast
+ {
+-  int cast_length;
+-  CHARSET_INFO *cast_cs, *from_cs;
+   bool charset_conversion;
+   String tmp_value;
+ public:
++  int cast_length;
++  CHARSET_INFO *cast_cs, *from_cs;
+   Item_char_typecast(Item *a, int length_arg, CHARSET_INFO *cs_arg)
+     :Item_typecast(a), cast_length(length_arg), cast_cs(cs_arg) {}
+   enum Functype functype() const { return CHAR_TYPECAST_FUNC; }
+@@ -980,8 +981,8 @@
+ 
+ class Item_func_timestamp_diff :public Item_int_func
+ {
+-  const interval_type int_type;
+ public:
++  const interval_type int_type;
+   Item_func_timestamp_diff(Item *a,Item *b,interval_type type_arg)
+     :Item_int_func(a,b), int_type(type_arg) {}
+   const char *func_name() const { return "timestampdiff"; }
+diff U3w cmd-line-utils/libedit/np/unvis.c cmd-line-utils/libedit/np/unvis.c
+--- cmd-line-utils/libedit/np/unvis.c	Fri Jan 16 04:25:12 1970
++++ cmd-line-utils/libedit/np/unvis.c	Fri Jan 16 04:25:12 1970
+@@ -56,10 +56,10 @@
+ __weak_alias(unvis,_unvis)
+ #endif
+ 
+-#ifdef __warn_references
++/*#ifdef __warn_references
+ __warn_references(unvis,
+     "warning: reference to compatibility unvis(); include <vis.h> for correct reference")
+-#endif
++#endif*/
+ 
+ #if !HAVE_VIS_H
+ /*
