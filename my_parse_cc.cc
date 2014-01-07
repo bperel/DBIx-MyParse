@@ -666,9 +666,9 @@ perl_object * my_parse_outer(perl_object * parser, char * db, char * query) {
 	lex_start(thd);
 	mysql_reset_thd_for_next_command(thd);
 
-	Parser_state parser_state(thd, query, strlen(query));
-	thd->m_parser_state= &parser_state;
-	parser_state.m_lip.stmt_prepare_mode = 1;
+	Lex_input_stream lip(thd, query, strlen(query));
+	thd->m_lip= &lip;
+	lip.stmt_prepare_mode = 1;
 	
 	LEX * lex = thd->lex;
 
