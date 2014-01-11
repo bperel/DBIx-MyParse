@@ -14,7 +14,17 @@ the module from scratch please do the following:
  
    	* [5.0.51a](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.51a.tar.gz)
  
-   	* [5.0.67](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.67.tar.gz)
+   	* [5.0.67](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.77.tar.gz)
+ 
+   	* (On branch for-mysql-5.0.77) [5.0.77](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.77.tar.gz)
+ 
+   	* (On branch for-mysql-5.0.77) [5.0.81](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.81.tar.gz)
+ 
+   	* (On branch for-mysql-5.0.77) [5.0.82](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.82.tar.gz)
+ 
+   	* (On branch for-mysql-5.0.77) [5.0.83](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.83.tar.gz)
+ 
+   	* (On branch for-mysql-5.0.77) [5.0.84](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.84.tar.gz)
 	
 and un-TGZ it.
 
