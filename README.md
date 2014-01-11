@@ -9,30 +9,19 @@ the module from scratch please do the following:
 
 * Prepare your MySQL source
 
- * 1. Download the MySQL source. The following versions are currently supported :
-   	* [5.0.45](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.45.tar.gz)
- 
-   	* [5.0.51a](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.51a.tar.gz)
- 
-   	* [5.0.67](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.77.tar.gz)
- 
-   	* (On branch for-mysql-5.0.77) [5.0.77](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.77.tar.gz)
- 
-   	* (On branch for-mysql-5.0.77) [5.0.81](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.81.tar.gz)
- 
-   	* (On branch for-mysql-5.0.77) [5.0.82](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.82.tar.gz)
- 
-   	* (On branch for-mysql-5.0.77) [5.0.83](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.83.tar.gz)
- 
-   	* (On branch for-mysql-5.0.77) [5.0.84](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.84.tar.gz)
+ * Download the MySQL source. The MySQL versions from 5.0.45 to 5.0.89 are currently supported. Here are some examples regarding where to fetch the source : [Version 5.0.45](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.45.tar.gz) ; [Version 5.0.89](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.89.tar.gz).
 	
-and un-TGZ it.
+ * Un-TGZ it.
+
+ * Clone this repo :
+   	* Use the "master" branch of this repo for versions 5.0.45 to 5.0.67 included.
+   	* Use the "for-mysql-5.0.77" branch of this repo for versions 5.0.77 to 5.0.89 included
 
  * Apply the patch, using the MySQL version number as patch file name, e.g. for MySQL 5.0.45 :
 
 ```
 cd /usr/src/your-mysql-source
-cat /usr/src/DBIx-MyParse/patches/mysql-5.0.45.patch | patch -p1
+cat /usr/src/your-myparse-source/patches/mysql-5.0.45.patch | patch -p1
 ```
 
  * Configure the MySQL source
@@ -54,7 +43,7 @@ cd sql/share
 make install
 ```
 
-B. Install DBIx::MyParse
+* Install DBIx::MyParse
 
 ```
 perl Makefile.PL /usr/src/your-mysql-source
