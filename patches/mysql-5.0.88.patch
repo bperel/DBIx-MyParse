@@ -1,6 +1,6 @@
 diff U3w sql/item_cmpfunc.h sql/item_cmpfunc.h
---- mysql-5.0.84/sql/item_cmpfunc.h	Fri Jan 16 04:25:12 1970
-+++ mysql-5.0.84/sql/item_cmpfunc.h	Fri Jan 16 04:25:12 1970
+--- mysql-5.0.88/sql/item_cmpfunc.h	Fri Jan 16 04:25:12 1970
++++ mysql-5.0.88/sql/item_cmpfunc.h	Fri Jan 16 04:25:12 1970
 @@ -719,7 +719,6 @@
  
  class Item_func_case :public Item_func
@@ -37,8 +37,8 @@ diff U3w sql/item_cmpfunc.h sql/item_cmpfunc.h
  
    Item_func_like(Item *a,Item *b, Item *escape_arg, bool escape_used)
 diff U3w sql/item_func.h sql/item_func.h
---- mysql-5.0.84/sql/item_func.h	Fri Jan 16 04:25:12 1970
-+++ mysql-5.0.84/sql/item_func.h	Fri Jan 16 04:25:12 1970
+--- mysql-5.0.88/sql/item_func.h	Fri Jan 16 04:25:12 1970
++++ mysql-5.0.88/sql/item_func.h	Fri Jan 16 04:25:12 1970
 @@ -969,8 +969,8 @@
  
  class Item_func_benchmark :public Item_int_func
@@ -62,8 +62,8 @@ diff U3w sql/item_func.h sql/item_func.h
                             LEX_STRING *component_arg, const char *name_arg,
                             size_t name_len_arg);
 diff U3w sql/item_row.h sql/item_row.h
---- mysql-5.0.84/sql/item_row.h	Fri Jan 16 04:25:12 1970
-+++ mysql-5.0.84/sql/item_row.h	Fri Jan 16 04:25:12 1970
+--- mysql-5.0.88/sql/item_row.h	Fri Jan 16 04:25:12 1970
++++ mysql-5.0.88/sql/item_row.h	Fri Jan 16 04:25:12 1970
 @@ -15,20 +15,21 @@
  
  class Item_row: public Item
@@ -93,8 +93,8 @@ diff U3w sql/item_row.h sql/item_row.h
  
    enum Type type() const { return ROW_ITEM; };
 diff U3w sql/item_strfunc.h sql/item_strfunc.h
---- mysql-5.0.84/sql/item_strfunc.h	Fri Jan 16 04:25:12 1970
-+++ mysql-5.0.84/sql/item_strfunc.h	Fri Jan 16 04:25:12 1970
+--- mysql-5.0.88/sql/item_strfunc.h	Fri Jan 16 04:25:12 1970
++++ mysql-5.0.88/sql/item_strfunc.h	Fri Jan 16 04:25:12 1970
 @@ -356,9 +356,9 @@
  class Item_func_encode :public Item_str_func
  {
@@ -107,8 +107,8 @@ diff U3w sql/item_strfunc.h sql/item_strfunc.h
      Item_str_func(a), sql_crypt(seed_arg)
      {
 diff U3w sql/item_subselect.h sql/item_subselect.h
---- mysql-5.0.84/sql/item_subselect.h	Fri Jan 16 04:25:12 1970
-+++ mysql-5.0.84/sql/item_subselect.h	Fri Jan 16 04:25:12 1970
+--- mysql-5.0.88/sql/item_subselect.h	Fri Jan 16 04:25:12 1970
++++ mysql-5.0.88/sql/item_subselect.h	Fri Jan 16 04:25:12 1970
 @@ -36,10 +36,6 @@
    THD *thd;
    /* substitution instead of subselect in case of optimization */
@@ -151,8 +151,8 @@ diff U3w sql/item_subselect.h sql/item_subselect.h
    bool *pushed_cond_guards;
  
 diff U3w sql/item_sum.h sql/item_sum.h
---- mysql-5.0.84/sql/item_sum.h	Fri Jan 16 04:25:12 1970
-+++ mysql-5.0.84/sql/item_sum.h	Fri Jan 16 04:25:12 1970
+--- mysql-5.0.88/sql/item_sum.h	Fri Jan 16 04:25:12 1970
++++ mysql-5.0.88/sql/item_sum.h	Fri Jan 16 04:25:12 1970
 @@ -246,8 +246,6 @@
    List<Item_field> outer_fields;
  
@@ -172,8 +172,8 @@ diff U3w sql/item_sum.h sql/item_sum.h
    void mark_as_sum_func();
    Item_sum() :quick_group(1), arg_count(0), forced_const(FALSE)
 diff U3w sql/item_timefunc.h sql/item_timefunc.h
---- mysql-5.0.84/sql/item_timefunc.h	Fri Jan 16 04:25:12 1970
-+++ mysql-5.0.84/sql/item_timefunc.h	Fri Jan 16 04:25:12 1970
+--- mysql-5.0.88/sql/item_timefunc.h	Fri Jan 16 04:25:12 1970
++++ mysql-5.0.88/sql/item_timefunc.h	Fri Jan 16 04:25:12 1970
 @@ -3,6 +3,7 @@
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
