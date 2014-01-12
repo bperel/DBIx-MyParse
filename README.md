@@ -14,8 +14,8 @@ the module from scratch please do the following:
  * Un-TGZ it.
 
  * Clone this repo :
-   	* Use the "master" branch of this repo for versions 5.0.45 to 5.0.67 included.
-   	* Use the "for-mysql-5.0.77" branch of this repo for versions 5.0.77 to 5.0.89 included
+   	* Use the "master" branch of this repo for versions 5.0.77 to 5.0.89 included
+   	* Use the "for-mysql-5.0.45_to_5.0.67" branch of this repo for versions 5.0.45 to 5.0.67 included.
 
  * Apply the patch, using the MySQL version number as patch file name, e.g. for MySQL 5.0.45 :
 
