@@ -9,13 +9,13 @@ the module from scratch please do the following:
 
 * Prepare your MySQL source
 
- * Download the MySQL source. The MySQL versions from 5.0.45 to 5.0.89 are currently supported. Here are some examples regarding where to fetch the source : [Version 5.0.45](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.45.tar.gz) ; [Version 5.0.89](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.89.tar.gz).
+ * Download the MySQL source. The MySQL versions from 5.0.45 to 5.0.96 are currently supported. For instance, [version 5.0.96 can be downloaded here](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.96.tar.gz).
 	
  * Un-TGZ it.
 
  * Clone this repo :
    	* Use the "master" branch of this repo for versions 5.0.45 to 5.0.67 included.
-   	* Use the "for-mysql-5.0.77" branch of this repo for versions 5.0.77 to 5.0.89 included
+   	* Use the "for-mysql-5.0.77" branch of this repo for versions 5.0.77 to 5.0.96 included
 
  * Apply the patch, using the MySQL version number as patch file name, e.g. for MySQL 5.0.45 :
 
@@ -74,7 +74,7 @@ of the mysql source.
 
 If you get:
 
-051007 12:11:20 [ERROR] Can't find messagefile '/usr/local/share/mysql/english/errmsg.sys'
+[ERROR] Can't find messagefile '/usr/local/share/mysql/english/errmsg.sys'
 
 please try:
 
