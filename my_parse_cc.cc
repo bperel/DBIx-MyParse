@@ -119,7 +119,7 @@ perl_object * my_parse_table(THD * thd, st_select_lex * select_lex, perl_object 
 		my_parse_set_array( table_perl, MYPARSE_ITEM_TABLE_NAME, (void *) table->table_name, MYPARSE_ARRAY_STRING);
 	}
 
-	if (thd->lex->orig_sql_command == SQLCOM_SHOW_TABLES) {
+	if (thd->lex->sql_command == SQLCOM_SHOW_TABLES) {
 		my_parse_set_array( table_perl, MYPARSE_ITEM_DB_NAME, select_lex->db, MYPARSE_ARRAY_STRING);
 	} else if (table->db) {
 		my_parse_set_array( table_perl, MYPARSE_ITEM_DB_NAME, (void *) table->db, MYPARSE_ARRAY_STRING);
@@ -127,13 +127,26 @@ perl_object * my_parse_table(THD * thd, st_select_lex * select_lex, perl_object 
 
 	if (table->lock_type) {
 		char lock_option[255];
-		my_parse_thr_lock_type(table->lock_type, lock_option);
 		perl_object * options_perl = my_parse_get_array( query_perl, MYPARSE_QUERY_OPTIONS );
 		my_parse_set_array( options_perl, MYPARSE_ARRAY_APPEND, (void *) lock_option, MYPARSE_ARRAY_STRING);
 	}
 
-	if (table->use_index) {
-		perl_object * use_perl = my_parse_list_strings( *table->use_index );
+    List_iterator<Index_hint> index_hints(*table->index_hints);
+    List<String> hints_keys(* new List<String>());
+	perl_object * ignore_perl = my_parse_create_array();
+
+    Index_hint *hint;
+
+    while ((hint= index_hints++))
+    {
+    	hints_keys.push_front(hint->key_name.str);
+    	if (hint->type == INDEX_HINT_IGNORE) {
+    		my_parse_set_array( ignore_perl, MYPARSE_ARRAY_APPEND, hint, MYPARSE_ARRAY_STRING);
+    	}
+    }
+
+	if (table->index_hints->elements > 0) {
+		perl_object * use_perl = my_parse_list_strings( hints_keys );
 
 		if (table->force_index) {
 			my_parse_set_array( table_perl, MYPARSE_ITEM_FORCE_INDEX, use_perl, MYPARSE_ARRAY_REF);
@@ -142,8 +155,7 @@ perl_object * my_parse_table(THD * thd, st_select_lex * select_lex, perl_object 
 		}
 	}
 
-	if (table->ignore_index) {
-		perl_object * ignore_perl = my_parse_list_strings( *table->ignore_index );
+	if (ignore_perl->elements > 0) {
 		my_parse_set_array( table_perl, MYPARSE_ITEM_IGNORE_INDEX, ignore_perl, MYPARSE_ARRAY_REF);
 	}
 
@@ -238,7 +250,7 @@ perl_object * my_parse_schema_select(LEX * lex, st_select_lex * select_lex) {
 	perl_object * item_perl = my_parse_create_array();
 	perl_object * item_perl_ref = my_parse_bless(item_perl, MYPARSE_ITEM_CLASS);
 
-	if (lex->orig_sql_command == SQLCOM_SHOW_FIELDS) {
+	if (lex->sql_command == SQLCOM_SHOW_FIELDS) {
 		TABLE_LIST * table_list1 = (TABLE_LIST*) select_lex->table_list.first;
 		SELECT_LEX * select_lex2 = table_list1->schema_select_lex;
 		TABLE_LIST * table_list2 = (TABLE_LIST*) select_lex2->table_list.first;
@@ -247,8 +259,8 @@ perl_object * my_parse_schema_select(LEX * lex, st_select_lex * select_lex) {
 		my_parse_set_array( item_perl, MYPARSE_ITEM_TABLE_NAME, (void *) table_list2->table_name, MYPARSE_ARRAY_STRING);
 		my_parse_set_array( item_perl, MYPARSE_ITEM_DB_NAME, (void *) table_list2->db, MYPARSE_ARRAY_STRING);
 	} else if (
-		(lex->orig_sql_command == SQLCOM_SHOW_TABLES) ||
-		(lex->orig_sql_command == SQLCOM_SHOW_TABLE_STATUS) ||
+		(lex->sql_command == SQLCOM_SHOW_TABLES) ||
+		(lex->sql_command == SQLCOM_SHOW_TABLE_STATUS) ||
 		(lex->sql_command == SQLCOM_CHANGE_DB)
 	) {
 		my_parse_set_array( item_perl, MYPARSE_ITEM_ITEM_TYPE, (void *) "DATABASE_ITEM", MYPARSE_ARRAY_STRING);
@@ -763,22 +775,18 @@ perl_object * my_parse_inner(THD * thd, st_select_lex * select_lex, bool in_subq
 
 		if (lex->lock_option == TL_READ_HIGH_PRIORITY) {
 			char lock_option[255];
-			my_parse_thr_lock_type( lex->lock_option, lock_option);
 			my_parse_set_array( options_perl, MYPARSE_ARRAY_APPEND, (void *) lock_option, MYPARSE_ARRAY_STRING);
 		}
 	} else {
 		lex->sql_command = SQLCOM_SELECT;
-		lex->orig_sql_command = SQLCOM_END;
 	}
 
 	char sql_command[255];
-	char orig_sql_command[255];
 
 	my_parse_enum_sql_command(lex->sql_command, sql_command);
-	my_parse_enum_sql_command(lex->orig_sql_command, orig_sql_command);
 
 	my_parse_set_array( query_perl, MYPARSE_COMMAND, sql_command, MYPARSE_ARRAY_STRING);
-	my_parse_set_array( query_perl, MYPARSE_ORIG_COMMAND, orig_sql_command, MYPARSE_ARRAY_STRING);
+	my_parse_set_array( query_perl, MYPARSE_ORIG_COMMAND, sql_command, MYPARSE_ARRAY_STRING);
 
 	perl_object * items_perl;
 
@@ -1003,10 +1011,10 @@ perl_object * my_parse_inner(THD * thd, st_select_lex * select_lex, bool in_subq
 	}
 
 	if (
-		(lex->orig_sql_command == SQLCOM_SHOW_TABLES) ||
-		(lex->orig_sql_command == SQLCOM_SHOW_TABLE_STATUS) ||
-		(lex->orig_sql_command == SQLCOM_SHOW_FIELDS) ||
-		(lex->orig_sql_command == SQLCOM_SHOW_DATABASES) ||
+		(lex->sql_command == SQLCOM_SHOW_TABLES) ||
+		(lex->sql_command == SQLCOM_SHOW_TABLE_STATUS) ||
+		(lex->sql_command == SQLCOM_SHOW_FIELDS) ||
+		(lex->sql_command == SQLCOM_SHOW_DATABASES) ||
 		(lex->sql_command == SQLCOM_CHANGE_DB)
 	) {
 		perl_object * schema_perl = my_parse_schema_select(lex, select_lex);

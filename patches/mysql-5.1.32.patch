@@ -1,0 +1,213 @@
+diff -r -u mysql-5.1.32/configure.in mysql-5.1.32_patched/configure.in
+--- mysql-5.1.32/configure.in	2009-02-14 01:52:06.000000000 +0100
++++ mysql-5.1.32_patched/configure.in	2014-05-26 12:35:33.261998433 +0200
+@@ -453,7 +453,16 @@
+ then
+   ABI_CHECK=""
+ else
+-  ABI_CHECK="abi_check"
++  # Workaround GCC >= 4.5 - See Bug#52514
++  case `$CC -dumpversion` in
++    [[4-9]].[[5-9]]*)
++      AC_MSG_WARN([ABI check disabled (GCC >= 4.5)])
++      ABI_CHECK=""
++      ;;
++    *)
++      ABI_CHECK="abi_check"
++      ;;
++  esac
+ fi
+ 
+ AC_SUBST(ABI_CHECK)
+diff -r -u mysql-5.1.32/sql/item_cmpfunc.h mysql-5.1.32_patched/sql/item_cmpfunc.h
+--- mysql-5.1.32/sql/item_cmpfunc.h	2009-02-14 01:56:02.000000000 +0100
++++ mysql-5.1.32_patched/sql/item_cmpfunc.h	2014-05-30 16:56:44.929952332 +0200
+@@ -51,6 +51,9 @@
+   Arg_comparator(Item **a1, Item **a2): a(a1), b(a2), thd(0),
+     a_cache(0), b_cache(0) {};
+ 
++  /* unit of subquery */
++  st_select_lex_unit *unit;
++
+   int set_compare_func(Item_bool_func2 *owner, Item_result type);
+   inline int set_compare_func(Item_bool_func2 *owner_arg)
+   {
+@@ -756,6 +759,9 @@
+   virtual uchar *get_value(Item *item)=0;
+   void sort()
+   {
++  CHARSET_INFO *cast_cs;
++  int cast_length;
++
+     my_qsort2(base,used_count,size,compare,collation);
+   }
+   int find(Item *item);
+@@ -1116,7 +1122,6 @@
+ 
+ class Item_func_case :public Item_func
+ {
+-  int first_expr_num, else_expr_num;
+   enum Item_result cached_result_type, left_result_type;
+   String tmp_value;
+   uint ncases;
+@@ -1126,6 +1131,7 @@
+   cmp_item *cmp_items[5]; /* For all result types */
+   cmp_item *case_item;
+ public:
++  int first_expr_num, else_expr_num;
+   Item_func_case(List<Item> &list, Item *first_expr_arg, Item *else_expr_arg)
+     :Item_func(), first_expr_num(-1), else_expr_num(-1),
+     cached_result_type(INT_RESULT), left_result_type(INT_RESULT), case_item(0)
+@@ -1367,11 +1373,9 @@
+   bool turboBM_matches(const char* text, int text_len) const;
+   enum { alphabet_size = 256 };
+ 
++public:
+   Item *escape_item;
+-  
+   bool escape_used_in_parsing;
+-
+-public:
+   int escape;
+ 
+   Item_func_like(Item *a,Item *b, Item *escape_arg, bool escape_used)
+@@ -1428,6 +1432,7 @@
+   const char *func_name() const { return "regex"; }
+ 
+   virtual inline void print(String *str, enum_query_type query_type)
++public:
+   {
+     print_op(str, query_type);
+   }
+diff -r -u mysql-5.1.32/sql/item_func.h mysql-5.1.32_patched/sql/item_func.h
+--- mysql-5.1.32/sql/item_func.h	2009-02-14 01:56:02.000000000 +0100
++++ mysql-5.1.32_patched/sql/item_func.h	2014-05-27 14:33:46.470450837 +0200
+@@ -1437,9 +1437,6 @@
+ 
+ class Item_func_get_system_var :public Item_func
+ {
+-  sys_var *var;
+-  enum_var_type var_type, orig_var_type;
+-  LEX_STRING component;
+   longlong cached_llval;
+   double cached_dval;
+   String cached_strval;
+@@ -1448,6 +1445,10 @@
+   uchar cache_present;
+ 
+ public:
++  sys_var *var;
++  enum_var_type var_type, orig_var_type;
++  LEX_STRING component;
++
+   Item_func_get_system_var(sys_var *var_arg, enum_var_type var_type_arg,
+                            LEX_STRING *component_arg, const char *name_arg,
+                            size_t name_len_arg);
+diff -r -u mysql-5.1.32/sql/item_row.h mysql-5.1.32_patched/sql/item_row.h
+--- mysql-5.1.32/sql/item_row.h	2009-02-14 01:56:03.000000000 +0100
++++ mysql-5.1.32_patched/sql/item_row.h	2014-05-27 14:32:15.657069710 +0200
+@@ -15,12 +15,12 @@
+ 
+ class Item_row: public Item
+ {
+-  Item **items;
+   table_map used_tables_cache;
+-  uint arg_count;
+   bool const_item_cache;
+   bool with_null;
+ public:
++  Item **items;
++  uint arg_count;
+   Item_row(List<Item> &);
+   Item_row(Item_row *item):
+     Item(),
+diff -r -u mysql-5.1.32/sql/item_subselect.h mysql-5.1.32_patched/sql/item_subselect.h
+--- mysql-5.1.32/sql/item_subselect.h	2009-02-14 01:56:03.000000000 +0100
++++ mysql-5.1.32_patched/sql/item_subselect.h	2014-05-27 14:34:05.483952231 +0200
+@@ -36,8 +36,6 @@
+   THD *thd;
+   /* substitution instead of subselect in case of optimization */
+   Item *substitution;
+-  /* unit of subquery */
+-  st_select_lex_unit *unit;
+   /* engine that perform execution of subselect (single select or union) */
+   subselect_engine *engine;
+   /* old engine if engine was changed */
+@@ -54,6 +52,8 @@
+   bool const_item_cache;
+ 
+ public:
++  /* unit of subquery */
++  st_select_lex_unit *unit;
+   /* changed engine indicator */
+   bool engine_changed;
+   /* subquery is transformed */
+@@ -259,7 +259,6 @@
+ class Item_in_subselect :public Item_exists_subselect
+ {
+ protected:
+-  Item *left_expr;
+   /*
+     expr & optimizer used in subselect rewriting to store Item for
+     all JOIN in UNION
+@@ -270,6 +269,7 @@
+   bool abort_on_null;
+   bool transformed;
+ public:
++  Item *left_expr;
+   /* Used to trigger on/off conditions that were pushed down to subselect */
+   bool *pushed_cond_guards;
+ 
+diff -r -u mysql-5.1.32/sql/item_sum.h mysql-5.1.32_patched/sql/item_sum.h
+--- mysql-5.1.32/sql/item_sum.h	2009-02-14 01:56:03.000000000 +0100
++++ mysql-5.1.32_patched/sql/item_sum.h	2014-06-09 14:48:18.715907698 +0200
+@@ -246,8 +246,7 @@
+   List<Item_field> outer_fields;
+ 
+ protected:  
+-  uint arg_count;
+-  Item **args, *tmp_args[2];
++  Item *tmp_args[2];
+   /* 
+     Copy of the arguments list to hold the original set of arguments.
+     Used in EXPLAIN EXTENDED instead of the current argument list because 
+@@ -255,9 +254,11 @@
+   */
+   Item **orig_args, *tmp_orig_args[2];
+   table_map used_tables_cache;
+-  bool forced_const;
+ 
+ public:  
++  uint arg_count;
++  bool forced_const;
++  Item **args;
+ 
+   void mark_as_sum_func();
+   Item_sum() :quick_group(1), arg_count(0), forced_const(FALSE)
+diff -r -u mysql-5.1.32/sql/item_timefunc.h mysql-5.1.32_patched/sql/item_timefunc.h
+--- mysql-5.1.32/sql/item_timefunc.h	2009-02-14 01:56:03.000000000 +0100
++++ mysql-5.1.32_patched/sql/item_timefunc.h	2014-05-27 14:34:23.052731675 +0200
+@@ -746,11 +746,11 @@
+ 
+ class Item_char_typecast :public Item_typecast
+ {
+-  int cast_length;
+-  CHARSET_INFO *cast_cs, *from_cs;
+   bool charset_conversion;
+   String tmp_value;
+ public:
++  int cast_length;
++  CHARSET_INFO *cast_cs, *from_cs;
+   Item_char_typecast(Item *a, int length_arg, CHARSET_INFO *cs_arg)
+     :Item_typecast(a), cast_length(length_arg), cast_cs(cs_arg) {}
+   enum Functype functype() const { return CHAR_TYPECAST_FUNC; }
+@@ -958,8 +958,8 @@
+ 
+ class Item_func_timestamp_diff :public Item_int_func
+ {
+-  const interval_type int_type;
+ public:
++  const interval_type int_type;
+   Item_func_timestamp_diff(Item *a,Item *b,interval_type type_arg)
+     :Item_int_func(a,b), int_type(type_arg) {}
+   const char *func_name() const { return "timestampdiff"; }
