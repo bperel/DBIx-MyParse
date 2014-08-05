@@ -9,7 +9,7 @@ the module from scratch please do the following:
 
 * Prepare your MySQL source
 
- * Download the MySQL source. The MySQL versions from 5.0.45 to 5.0.96 are currently supported. Here are some examples regarding where to fetch the source : [Version 5.0.45](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.45.tar.gz) ; [Version 5.0.96](http://downloads.mysql.com/archives/mysql-5.0/mysql-5.0.96.tar.gz).
+ * Download the MySQL source. The MySQL versions from 5.0.45 to 5.0.96 are currently supported. Here are some examples regarding where to fetch the source : [Version 5.0.45](https://dev.mysql.com/get/Downloads/MySQL-5.0/mysql-5.0.45.tar.gz) ; [Version 5.0.96](https://dev.mysql.com/get/Downloads/MySQL-5.0/mysql-5.0.96.tar.gz).
 	
  * Un-TGZ it.
 
