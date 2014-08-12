@@ -14,11 +14,11 @@ my @headers = (
 		enum_name => 'Type',
 	},
 	{
-		file_name => 'sql/item_timefunc.h',
+		file_name => 'include/my_time.h',
 		enum_name => 'interval_type',
 	},
 	{
-		file_name => 'sql/sql_lex.h',
+		file_name => 'sql/sql_cmd.h',
 		enum_name => 'enum_sql_command'
 	},
 	{

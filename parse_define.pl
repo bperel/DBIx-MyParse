@@ -11,8 +11,8 @@ my @headers = (
 	{
 		# We specify the list manually since there is no naming convention
 		# for the options that would allow us to extract it automatically
-		# from sql/mysql_priv.h. Too bad.
-		file_name => 'sql/mysql_priv.h',
+		# from sql/sql_priv.h. Too bad.
+		file_name => 'sql/sql_priv.h',
 		define_type => 'bit',
 		define_list => [
 			'SELECT_DISTINCT',
@@ -23,7 +23,7 @@ my @headers = (
 			'OPTION_FOUND_ROWS',
 			'OPTION_TO_QUERY_CACHE',
 			'SELECT_NO_JOIN_CACHE',
-			'OPTION_BIG_TABLES',
+			'OPTION_AUTOCOMMIT',
 			'OPTION_BIG_SELECTS',
 			'OPTION_LOG_OFF',
 			'TMP_TABLE_ALL_COLUMNS',
@@ -37,13 +37,18 @@ my @headers = (
 			'OPTION_BEGIN',
 			'OPTION_TABLE_LOCK',
 			'OPTION_QUICK',
-			'OPTION_QUOTE_SHOW_CREATE',
+			'OPTION_KEEP_LOG',
 #			'OPTION_INTERNAL_SUBTRANSACTIONS'
 		],
 		function_name => 'my_parse_query_options'
 	},
 	{
-		file_name => 'sql/mysql_priv.h',
+		file_name => 'include/mysqld_error.h',
+		function_name => 'my_parse_errno',
+		define_type => 'byte'
+	},
+	{
+		file_name => 'sql/sql_lex.h',
 		define_type => 'bit',
 		define_list => [
 			'TL_OPTION_UPDATING',
@@ -52,11 +57,6 @@ my @headers = (
 			'TL_OPTION_ALIAS'
 		],
 		function_name => 'my_parse_table_join_options'
-	},
-	{
-		file_name => 'include/mysqld_error.h',
-		function_name => 'my_parse_errno',
-		define_type => 'byte'
 	}
 );
 
@@ -70,8 +70,16 @@ print CODE "
 #include <$output_header>
 #include <string.h>
 #include <my_parse.h>
+#include <sql/sql_class.h>
 
 ";
+
+# Include all the headers first, then the functions
+foreach my $header (@headers) {
+	print CODE "#include <$header->{file_name}>
+" if not defined $included{$header->{file_name}};
+	$included{$header->{file_name}} = 1;
+}
 
 foreach my $header (@headers) {
 
@@ -85,13 +93,6 @@ void * $header->{function_name} (unsigned long define_value);
 		";
 
 		print CODE "
-
-#include <$header->{file_name}>
-
-		" if not defined $included{$header->{file_name}};
-		$included{$header->{file_name}} = 1;
-
-print CODE "
 
 void * $header->{function_name} (unsigned long define_value) {
 

@@ -25,7 +25,7 @@
 #define EMBEDDED_LIBRARY
 #define MYSQL_SERVER
 
-#include <sql/mysql_priv.h>
+#include <sql/sql_priv.h>
 #include <mysql.h>
 #include <libmysqld/embedded_priv.h>
 
@@ -132,17 +132,18 @@ perl_object * my_parse_table(THD * thd, st_select_lex * select_lex, perl_object 
 	}
 
     List_iterator<Index_hint> index_hints(*table->index_hints);
+    Index_hint *hint;
+
     List<String> hints_keys(* new List<String>());
 	perl_object * ignore_perl = my_parse_create_array();
 
-    Index_hint *hint;
-
     while ((hint= index_hints++))
     {
-    	hints_keys.push_front(hint->key_name.str);
+    	hints_keys.push_front((String*) hint->key_name.str);
     	if (hint->type == INDEX_HINT_IGNORE) {
     		my_parse_set_array( ignore_perl, MYPARSE_ARRAY_APPEND, hint, MYPARSE_ARRAY_STRING);
     	}
+
     }
 
 	if (table->index_hints->elements > 0) {
@@ -155,8 +156,8 @@ perl_object * my_parse_table(THD * thd, st_select_lex * select_lex, perl_object 
 		}
 	}
 
-	if (ignore_perl->elements > 0) {
-		my_parse_set_array( table_perl, MYPARSE_ITEM_IGNORE_INDEX, ignore_perl, MYPARSE_ARRAY_REF);
+	if (hint->type == INDEX_HINT_IGNORE) {
+		my_parse_set_array( ignore_perl, MYPARSE_ARRAY_APPEND, hint, MYPARSE_ARRAY_STRING);
 	}
 
 	if (table->nested_join) {
@@ -477,7 +478,7 @@ perl_object * my_parse_item(THD * thd, Item * item) {
 				perl_object * count_perl = my_parse_create_array();
 				perl_object * count_perl_ref = my_parse_bless(count_perl, MYPARSE_ITEM_CLASS);
 				my_parse_set_array( count_perl, MYPARSE_ITEM_ITEM_TYPE, (void *) "INT_ITEM", MYPARSE_ARRAY_STRING);
-				my_parse_set_array( count_perl, MYPARSE_ITEM_VALUE, &func_benchmark->loop_count, MYPARSE_ARRAY_LONG);
+//				my_parse_set_array( count_perl, MYPARSE_ITEM_VALUE, &func_benchmark->loop_count, MYPARSE_ARRAY_LONG);
 				my_parse_set_array( args_perl, MYPARSE_ARRAY_APPEND, count_perl_ref, MYPARSE_ARRAY_REF);
 			}
 
@@ -696,7 +697,7 @@ perl_object * my_parse_outer(perl_object * parser, char * db, char * query) {
 
 /*	lex->stmt_prepare_mode = TRUE;	*/	/* Gone in 5.0.45 */
 	thd->command = COM_STMT_PREPARE;
-	int error = MYSQLparse((void *)thd) || thd->is_fatal_error || thd->net.report_error;
+	int error = parse_sql(thd, &parser_state, NULL) || thd->is_fatal_error || thd->net.error;
 
 	perl_object * query_perl_ref;
 
@@ -829,7 +830,7 @@ perl_object * my_parse_inner(THD * thd, st_select_lex * select_lex, bool in_subq
 		perl_object * database_perl = my_parse_create_array();
 		perl_object * database_perl_ref = my_parse_bless(database_perl, MYPARSE_ITEM_CLASS);
 		my_parse_set_array( database_perl, MYPARSE_ITEM_ITEM_TYPE, (void *) "DATABASE_ITEM", MYPARSE_ARRAY_STRING);
-		my_parse_set_array( database_perl, MYPARSE_ITEM_DB_NAME, (void *) lex->name, MYPARSE_ARRAY_STRING);
+		my_parse_set_array( database_perl, MYPARSE_ITEM_DB_NAME, (void*) lex->name.str, MYPARSE_ARRAY_STRING);
 		my_parse_set_array( query_perl, MYPARSE_SCHEMA_SELECT, database_perl_ref, MYPARSE_ARRAY_REF);
 	}
 
