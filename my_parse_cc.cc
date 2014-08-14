@@ -25,9 +25,11 @@
 #define EMBEDDED_LIBRARY
 #define MYSQL_SERVER
 
-#include <sql/sql_priv.h>
 #include <mysql.h>
 #include <libmysqld/embedded_priv.h>
+#include <sql_parse.h>
+#include <sql_base.h>
+#include <set_var.h>
 
 #include <my_parse.h>
 
@@ -127,6 +129,7 @@ perl_object * my_parse_table(THD * thd, st_select_lex * select_lex, perl_object 
 
 	if (table->lock_type) {
 		char lock_option[255];
+		my_parse_thr_lock_type(table->lock_type, lock_option);
 		perl_object * options_perl = my_parse_get_array( query_perl, MYPARSE_QUERY_OPTIONS );
 		my_parse_set_array( options_perl, MYPARSE_ARRAY_APPEND, (void *) lock_option, MYPARSE_ARRAY_STRING);
 	}
@@ -374,7 +377,7 @@ perl_object * my_parse_item(THD * thd, Item * item) {
 
 		if (
 			(item->type() == Item::COND_ITEM) ||
-			((item->type() == Item::FUNC_ITEM) && (cond->functype() == Item_func::COND_XOR_FUNC))
+			((item->type() == Item::FUNC_ITEM) && (cond->functype() == Item_func::XOR_FUNC))
 		) {
 			List_iterator_fast<Item> li(*((Item_cond *) item)->argument_list());
 			Item *sub_item;
@@ -433,8 +436,8 @@ perl_object * my_parse_item(THD * thd, Item * item) {
 
 				sys_var * var = get_system_var->var;
 		
-				if (var->name) {
-					my_parse_set_array( var_param_perl, MYPARSE_ITEM_VAR_NAME, (void *) var->name, MYPARSE_ARRAY_STRING);
+				if (var->name.length > 0) {
+					my_parse_set_array( var_param_perl, MYPARSE_ITEM_VAR_NAME, (void *) var->name.str, MYPARSE_ARRAY_STRING);
 				}
 
 				my_parse_set_array( var_param_perl, MYPARSE_ITEM_ITEM_TYPE, (void *) "SYSTEM_VAR_ITEM", MYPARSE_ARRAY_STRING);
@@ -679,7 +682,9 @@ perl_object * my_parse_outer(perl_object * parser, char * db, char * query) {
 	lex_start(thd);
 	mysql_reset_thd_for_next_command(thd);
 
-	Parser_state parser_state(thd, query, strlen(query));
+	Parser_state parser_state;
+	parser_state.init(thd, query, strlen(query));
+
 	thd->m_parser_state= &parser_state;
 	parser_state.m_lip.stmt_prepare_mode = 1;
 	
@@ -695,9 +700,8 @@ perl_object * my_parse_outer(perl_object * parser, char * db, char * query) {
 	lex->select_lex.group_list.first = NULL;
 /*	lex->select_lex.explicit_limit = NULL; */
 
-/*	lex->stmt_prepare_mode = TRUE;	*/	/* Gone in 5.0.45 */
-	thd->command = COM_STMT_PREPARE;
-	int error = parse_sql(thd, &parser_state, NULL) || thd->is_fatal_error || thd->net.error;
+	thd->m_command = COM_STMT_PREPARE;
+	int error = parse_sql(thd, &parser_state, NULL, true) || thd->is_fatal_error || thd->net.error;
 
 	perl_object * query_perl_ref;
 
@@ -757,6 +761,8 @@ perl_object * my_parse_inner(THD * thd, st_select_lex * select_lex, bool in_subq
 
 	LEX * lex = thd->lex;
 
+	thr_lock_type lock_type = thd->m_parser_state->m_yacc.m_lock_type;
+
 	perl_object * options_perl = my_parse_query_options( select_lex->options );
 	my_parse_set_array( query_perl, MYPARSE_QUERY_OPTIONS, options_perl, MYPARSE_ARRAY_REF);
 
@@ -774,8 +780,9 @@ perl_object * my_parse_inner(THD * thd, st_select_lex * select_lex, bool in_subq
 			my_parse_set_array( options_perl, MYPARSE_ARRAY_APPEND, (void *) "IGNORE", MYPARSE_ARRAY_STRING);
 		}
 
-		if (lex->lock_option == TL_READ_HIGH_PRIORITY) {
+		if (lock_type == TL_READ_HIGH_PRIORITY) {
 			char lock_option[255];
+			my_parse_thr_lock_type( lock_type, lock_option);
 			my_parse_set_array( options_perl, MYPARSE_ARRAY_APPEND, (void *) lock_option, MYPARSE_ARRAY_STRING);
 		}
 	} else {
@@ -837,7 +844,7 @@ perl_object * my_parse_inner(THD * thd, st_select_lex * select_lex, bool in_subq
 	if ((
 		(lex->sql_command == SQLCOM_DROP_DB) ||
 		(lex->sql_command == SQLCOM_DROP_TABLE)
-	) && lex->drop_if_exists) {
+	) && lex->check_exists) {
 		my_parse_set_array( options_perl, MYPARSE_ARRAY_APPEND, (void *) "DROP_IF_EXISTS", MYPARSE_ARRAY_STRING);
 	}
 

@@ -1,0 +1,271 @@
+diff -r -u /mnt/mariadb-10.0.12/include/my_compiler.h /mnt/mariadb-10.0.12_patched/include/my_compiler.h
+--- /mnt/mariadb-10.0.12/include/my_compiler.h	2014-06-12 11:26:04.000000000 +0200
++++ /mnt/mariadb-10.0.12_patched/include/my_compiler.h	2014-08-14 15:59:50.844398000 +0200
+@@ -100,44 +100,47 @@
+ */
+ 
+ #ifdef __cplusplus
+-
+-/**
+-  Opaque storage with a particular alignment.
+-*/
+-# if defined(MY_ALIGNED)
+-/* Partial specialization used due to MSVC++. */
+-template<size_t alignment> struct my_alignment_imp;
+-template<> struct MY_ALIGNED(1) my_alignment_imp<1> {};
+-template<> struct MY_ALIGNED(2) my_alignment_imp<2> {};
+-template<> struct MY_ALIGNED(4) my_alignment_imp<4> {};
+-template<> struct MY_ALIGNED(8) my_alignment_imp<8> {};
+-template<> struct MY_ALIGNED(16) my_alignment_imp<16> {};
+-/* ... expand as necessary. */
+-# else
+-template<size_t alignment>
+-struct my_alignment_imp { double m1; };
+-# endif
+-
+-/**
+-  A POD type with a given size and alignment.
+-
+-  @remark If the compiler does not support a alignment attribute
+-          (MY_ALIGN macro), the default alignment of a double is
+-          used instead.
+-
+-  @tparam size        The minimum size.
+-  @tparam alignment   The desired alignment: 1, 2, 4, 8 or 16.
+-*/
+-template <size_t size, size_t alignment>
+-struct my_aligned_storage
++extern "C++"
+ {
+-  union
+-  {
+-    char data[size];
+-    my_alignment_imp<alignment> align;
+-  };
+-};
+-
++	/**
++	  Opaque storage with a particular alignment.
++	*/
++	# if defined(MY_ALIGNED)
++	/* Partial specialization used due to MSVC++. */
++
++	template<size_t alignment> struct my_alignment_imp;
++	template<> struct MY_ALIGNED(1) my_alignment_imp<1> {};
++	template<> struct MY_ALIGNED(2) my_alignment_imp<2> {};
++	template<> struct MY_ALIGNED(4) my_alignment_imp<4> {};
++	template<> struct MY_ALIGNED(8) my_alignment_imp<8> {};
++	template<> struct MY_ALIGNED(16) my_alignment_imp<16> {};
++
++	/* ... expand as necessary. */
++	# else
++	template<size_t alignment>
++	struct my_alignment_imp { double m1; };
++	# endif
++
++	/**
++	  A POD type with a given size and alignment.
++
++	  @remark If the compiler does not support a alignment attribute
++			  (MY_ALIGN macro), the default alignment of a double is
++			  used instead.
++
++	  @tparam size        The minimum size.
++	  @tparam alignment   The desired alignment: 1, 2, 4, 8 or 16.
++	*/
++	template <size_t size, size_t alignment>
++	struct my_aligned_storage
++	{
++	  union
++	  {
++		char data[size];
++		my_alignment_imp<alignment> align;
++	  };
++	};
++}
+ #endif /* __cplusplus */
+ 
+ # ifndef MY_ALIGNED
+diff -r -u /mnt/mariadb-10.0.12/include/my_global.h /mnt/mariadb-10.0.12_patched/include/my_global.h
+--- /mnt/mariadb-10.0.12/include/my_global.h	2014-06-12 11:26:05.000000000 +0200
++++ /mnt/mariadb-10.0.12_patched/include/my_global.h	2014-08-14 15:59:49.787186600 +0200
+@@ -1124,7 +1124,10 @@
+ #define MY_INT64_NUM_DECIMAL_DIGITS 21
+ 
+ #ifdef __cplusplus
++extern "C++"
++{
+ #include <limits> /* should be included before min/max macros */
++}
+ #endif
+ 
+ /* Define some useful general macros (should be done after all headers). */
+diff -r -u /mnt/mariadb-10.0.12/sql/item_cmpfunc.h /mnt/mariadb-10.0.12_patched/sql/item_cmpfunc.h
+--- /mnt/mariadb-10.0.12/sql/item_cmpfunc.h	2014-06-12 11:26:04.000000000 +0200
++++ /mnt/mariadb-10.0.12_patched/sql/item_cmpfunc.h	2014-08-14 15:49:37.242202100 +0200
+@@ -26,7 +26,7 @@
+ #include "thr_malloc.h"                         /* sql_calloc */
+ #include "item_func.h"             /* Item_int_func, Item_bool_func */
+ #define PCRE_STATIC 1             /* Important on Windows */
+-#include "pcre.h"                 /* pcre header file */
++#include "../pcre/pcre.h"                 /* pcre header file */
+ 
+ extern Item_result item_cmp_type(Item_result a,Item_result b);
+ class Item_bool_func2;
+@@ -1218,15 +1218,16 @@
+ 
+ class Item_func_case :public Item_func_hybrid_field_type
+ {
+-  int first_expr_num, else_expr_num;
+-  enum Item_result left_result_type;
+   String tmp_value;
+   uint ncases;
+   Item_result cmp_type;
+   DTCollation cmp_collation;
+   cmp_item *cmp_items[6]; /* For all result types */
+-  cmp_item *case_item;
+ public:
++  int first_expr_num, else_expr_num;
++  enum Item_result left_result_type;
++  cmp_item *case_item;
++
+   Item_func_case(List<Item> &list, Item *first_expr_arg, Item *else_expr_arg)
+     :Item_func_hybrid_field_type(), first_expr_num(-1), else_expr_num(-1),
+     left_result_type(INT_RESULT), case_item(0)
+@@ -1465,12 +1466,13 @@
+   bool turboBM_matches(const char* text, int text_len) const;
+   enum { alphabet_size = 256 };
+ 
++public:
++
+   Item *escape_item;
+ 
+   bool escape_used_in_parsing;
+   bool use_sampling;
+ 
+-public:
+   int escape;
+ 
+   Item_func_like(Item *a,Item *b, Item *escape_arg, bool escape_used)
+diff -r -u /mnt/mariadb-10.0.12/sql/item_func.h /mnt/mariadb-10.0.12_patched/sql/item_func.h
+--- /mnt/mariadb-10.0.12/sql/item_func.h	2014-06-12 11:26:05.000000000 +0200
++++ /mnt/mariadb-10.0.12_patched/sql/item_func.h	2014-08-14 15:51:30.300809300 +0200
+@@ -1827,9 +1827,6 @@
+ 
+ class Item_func_get_system_var :public Item_func
+ {
+-  sys_var *var;
+-  enum_var_type var_type, orig_var_type;
+-  LEX_STRING component;
+   longlong cached_llval;
+   double cached_dval;
+   String cached_strval;
+@@ -1838,6 +1835,9 @@
+   uchar cache_present;
+ 
+ public:
++  LEX_STRING component;
++  sys_var *var;
++  enum_var_type var_type, orig_var_type;
+   Item_func_get_system_var(sys_var *var_arg, enum_var_type var_type_arg,
+                            LEX_STRING *component_arg, const char *name_arg,
+                            size_t name_len_arg);
+diff -r -u /mnt/mariadb-10.0.12/sql/item_row.h /mnt/mariadb-10.0.12_patched/sql/item_row.h
+--- /mnt/mariadb-10.0.12/sql/item_row.h	2014-06-12 11:26:05.000000000 +0200
++++ /mnt/mariadb-10.0.12_patched/sql/item_row.h	2014-08-14 15:51:18.846518900 +0200
+@@ -19,12 +19,13 @@
+ 
+ class Item_row: public Item
+ {
++public:
+   Item **items;
+   table_map used_tables_cache, not_null_tables_cache;
+   uint arg_count;
+   bool const_item_cache;
+   bool with_null;
+-public:
++
+   Item_row(List<Item> &);
+   Item_row(Item_row *item):
+     Item(),
+diff -r -u /mnt/mariadb-10.0.12/sql/item_subselect.h /mnt/mariadb-10.0.12_patched/sql/item_subselect.h
+--- /mnt/mariadb-10.0.12/sql/item_subselect.h	2014-06-12 11:26:06.000000000 +0200
++++ /mnt/mariadb-10.0.12_patched/sql/item_subselect.h	2014-08-14 15:51:19.616672900 +0200
+@@ -466,7 +466,6 @@
+ protected:
+   /* Used to trigger on/off conditions that were pushed down to subselect */
+   bool *pushed_cond_guards;
+-  Comp_creator *func;
+ 
+ protected:
+   bool init_cond_guards();
+@@ -481,6 +480,7 @@
+                                     Item **where_item,
+                                     Item **having_item);
+ public:
++  Comp_creator *func;
+   Item *left_expr;
+   /* Priority of this predicate in the convert-to-semi-join-nest process. */
+   int sj_convert_priority;
+diff -r -u /mnt/mariadb-10.0.12/sql/item_sum.h /mnt/mariadb-10.0.12_patched/sql/item_sum.h
+--- /mnt/mariadb-10.0.12/sql/item_sum.h	2014-06-12 11:26:04.000000000 +0200
++++ /mnt/mariadb-10.0.12_patched/sql/item_sum.h	2014-08-14 15:51:00.886427600 +0200
+@@ -361,9 +361,10 @@
+   */
+   List<Item_field> outer_fields;
+ 
+-protected:  
+   uint arg_count;
+   Item **args, *tmp_args[2];
++
++protected:
+   /* 
+     Copy of the arguments list to hold the original set of arguments.
+     Used in EXPLAIN EXTENDED instead of the current argument list because 
+diff -r -u /mnt/mariadb-10.0.12/sql/item_timefunc.h /mnt/mariadb-10.0.12_patched/sql/item_timefunc.h
+--- /mnt/mariadb-10.0.12/sql/item_timefunc.h	2014-06-12 11:26:04.000000000 +0200
++++ /mnt/mariadb-10.0.12_patched/sql/item_timefunc.h	2014-08-14 15:49:37.244702600 +0200
+@@ -887,11 +887,11 @@
+ 
+ class Item_char_typecast :public Item_str_func
+ {
+-  uint cast_length;
+-  CHARSET_INFO *cast_cs, *from_cs;
+   bool charset_conversion;
+   String tmp_value;
+ public:
++  uint cast_length;
++  CHARSET_INFO *cast_cs, *from_cs;
+   Item_char_typecast(Item *a, uint length_arg, CHARSET_INFO *cs_arg)
+     :Item_str_func(a), cast_length(length_arg), cast_cs(cs_arg) {}
+   enum Functype functype() const { return CHAR_TYPECAST_FUNC; }
+@@ -1029,8 +1029,8 @@
+ 
+ class Item_func_timestamp_diff :public Item_int_func
+ {
+-  const interval_type int_type;
+ public:
++  const interval_type int_type;
+   Item_func_timestamp_diff(Item *a,Item *b,interval_type type_arg)
+     :Item_int_func(a,b), int_type(type_arg) {}
+   const char *func_name() const { return "timestampdiff"; }
+diff -r -u /mnt/mariadb-10.0.12/sql/sql_class.h /mnt/mariadb-10.0.12_patched/sql/sql_class.h
+--- /mnt/mariadb-10.0.12/sql/sql_class.h	2014-06-12 11:26:03.000000000 +0200
++++ /mnt/mariadb-10.0.12_patched/sql/sql_class.h	2014-08-14 15:51:00.682386800 +0200
+@@ -1951,14 +1951,14 @@
+   uint dbug_sentry; // watch out for memory corruption
+ #endif
+   struct st_my_thread_var *mysys_var;
+-private:
++
++public:
+   /*
+     Type of current query: COM_STMT_PREPARE, COM_QUERY, etc. Set from
+     first byte of the packet in do_command()
+   */
+   enum enum_server_command m_command;
+ 
+-public:
+   uint32     file_id;			// for LOAD DATA INFILE
+   /* remote (peer) port */
+   uint16     peer_port;
